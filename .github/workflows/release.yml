@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Create changelog
+        id: changelog
+        if: ${{ steps.checkout.outcome == 'success'}}
+        uses: TriPSs/conventional-changelog-action@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          preset: conventionalcommits
+          release-count: 0
+          skip-version-file: true
+          pre-commit: .pre-commit.js
+
+      - name: Create release
+        id: release
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.changelog.outputs.tag }}
+          release_name: ${{ steps.changelog.outputs.tag }}
+          body: ${{ steps.changelog.outputs.clean_changelog }}
+
+      - name: Create zip archive
+        id: create-zip
+        if: ${{ steps.release.outcome == 'success'}}
+        run: |
+          git archive -o "${{ github.event.repository.name }}-${{ steps.changelog.outputs.tag }}.zip" --prefix "${{ github.event.repository.name }}/" ${{ steps.changelog.outputs.tag }} ":(exclude).github" ":(exclude,glob).*"
+
+      - name: Upload zip archive
+        id: upload-zip
+        if: ${{ steps.create-zip.outcome == 'success' }}
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: "${{ github.event.repository.name }}-${{ steps.changelog.outputs.tag }}.zip"
+          asset_name: "${{ github.event.repository.name }}-${{ steps.changelog.outputs.tag }}.zip"
+          asset_content_type: application/zip
+
+      - name: Delete zip archive
+        id: delete-zip
+        if: ${{ steps.create-zip.outcome == 'success' }}
+        run: |
+          rm "${{ github.event.repository.name }}-${{ steps.changelog.outputs.tag }}.zip"

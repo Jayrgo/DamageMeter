@@ -1,0 +1,20 @@
+---@meta
+--
+---@alias SpellID string|number
+--
+---@class UnitTable
+---@field name string
+---@field class? ClassFile
+--
+---@class Mode
+---@field defaultFilter? table
+---@field getSubTitle? fun(filter: table, segment?: Segment, values: table<any, number>, totalValue: number, maxValue: number):string?
+---@field getTitle fun(filter: table, segment?: Segment):string
+---@field getValues fun(filter: table, segment: Segment, values: table<any, number>, texts: table<any, string>, colors: table<any, ColorMixin>, icons: table<any, string|number>, iconCoords: table<any, number[]>):number?
+---@field menu? fun(filter: table, segment?: Segment):fun(value: any, arg: any):MenuInfo[]
+---@field onClick? fun(filter: table, key: any, button: string)
+---@field onHyperlink? fun(filter: table, link: string, button: string)
+---@field percent? boolean
+---@field perSecond? boolean
+---@field tooltip? fun(filter: table, segment: Segment, key: any, tooltip:Tooltip)
+-- 

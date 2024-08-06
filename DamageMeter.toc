@@ -1,0 +1,33 @@
+## Interface: 110002
+## Title: DamageMeter |cffbebebeby Jayrgo|r
+## Author: Jayrgo
+## Version: v0.1.0
+## SavedVariables: DamageMeter_SavedVars
+
+Init.lua
+
+Util.lua
+
+Localization\enUS.lua
+Localization\deDE.lua
+
+Tooltip.lua
+DropDownMenu.lua
+
+PlayerInfos.lua
+
+Segments.lua
+
+CombatLog.lua
+
+Modes/Damage.lua
+Modes/Healing.lua
+Modes/Interrupt.lua
+Modes/Dispel.lua
+Modes/Death.lua
+Modes/Roster.lua
+
+Bar.lua
+Window.lua
+
+Startup.lua
