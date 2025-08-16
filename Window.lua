@@ -139,6 +139,7 @@ local function setMode(isChecked, value, arg) arg:SetMode(value) end
 ---@param arg any
 local function createWindow(isChecked, value, arg)
     local window = windowPool:Acquire()
+    window:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     window:SetMovable(true)
     window:SetResizable(true)
     window:Show()
