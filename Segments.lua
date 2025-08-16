@@ -18,7 +18,7 @@ local FormatTimestamp = AddOn.FormatTimestamp
 local GUIDIsPlayer = C_PlayerInfo.GUIDIsPlayer
 local GetActiveChallengeMapID = C_ChallengeMode.GetActiveChallengeMapID
 local GetBestMapForUnit = C_Map.GetBestMapForUnit
-local GetCompletionInfo = C_ChallengeMode.GetCompletionInfo
+local GetChallengeCompletionInfo = C_ChallengeMode.GetChallengeCompletionInfo
 local GetMapInfo = C_Map.GetMapInfo
 local GetMapUIInfo = C_ChallengeMode.GetMapUIInfo
 local GetPlayerInfos = AddOn.GetPlayerInfos
@@ -311,15 +311,13 @@ function()
     local activeSegment = activeSegments.challenge
     stopSegment("challenge", time())
     if activeSegment then
-        local mapChallengeModeID, level, completionTime, onTime, keystoneUpgradeLevels, practiceRun,
-              oldOverallDungeonScore, newOverallDungeonScore, isMapRecord, isAffixRecord, primaryAffix,
-              isEligibleForScore, members = GetCompletionInfo()
-        if mapChallengeModeID then
-            if not practiceRun then
-                local name, id, timeLimit, texture, backgroundTexture = GetMapUIInfo(mapChallengeModeID)
+        local info = GetChallengeCompletionInfo()
+        if info.mapChallengeModeID then
+            if not info.practiceRun then
+                local name, id, timeLimit, texture, backgroundTexture = GetMapUIInfo(info.mapChallengeModeID)
                 if name then
                     activeSegment.name = format("%s (%s) |TInterface\\RAIDFRAME\\ReadyCheck-%s:0|t", name,
-                                                format(L.MYTHIC_LEVEL, level), onTime and "Ready" or "NotReady")
+                                                format(L.MYTHIC_LEVEL, info.level), info.onTime and "Ready" or "NotReady")
                 end
             end
         end
