@@ -3,7 +3,6 @@ local AddOn = (select(2, ...))
 
 local L = AddOn.L
 
-
 L.ABILITY = "Ability"
 L.ABSORBED = "Absorbed"
 L.ALL = "All"
