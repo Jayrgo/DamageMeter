@@ -210,7 +210,7 @@ function(frame)
     local window = frame
 
     window:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-    window:SetSize(300, 170)
+    window:SetSize(AddOn.DEFAULT_WINDOW_WIDTH, AddOn.DEFAULT_WINDOW_HEIGHT)
     window:SetClampedToScreen(true)
 
     ---@class WindowBackdrop : Frame
