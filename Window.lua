@@ -200,7 +200,7 @@ function(frame)
     ---@type Segment?
     local segment = AddOn.GetCombatSegment()
     ---@type string
-    local modeKey = "damage"
+    local modeKey = AddOn.ModeKeys[1]
     ---@type Mode?
     local mode
     ---@type Segment
@@ -758,6 +758,7 @@ function(frame)
             for k, v in next, mode.defaultFilter or {}, nil do filter[k] = v end
         end
     end
+    window:SetMode(modeKey)
 
     ---@return string?
     function window:GetMode() return modeKey end
