@@ -25,19 +25,20 @@ local GetItemQualityColor = AddOn.GetItemQualityColor
 local GetPlayerClass = AddOn.GetPlayerClass
 local GetPlayerName = AddOn.GetPlayerName
 
----@param source string
----@return string
-local function getSourceTitle(source)
-    return GenerateHyperlink(GetClassColor(GetPlayerClass(source)):WrapTextInColorCode(GetPlayerName(source)), "mode",
-                             "roster", "source", source)
-end
+local RosterMode = AddOn.RegisterMode("roster", L.MEMBERS)
+if RosterMode then
+    ---@param source string
+    ---@return string
+    local function getSourceTitle(source)
+        return GenerateHyperlink(GetClassColor(GetPlayerClass(source)):WrapTextInColorCode(GetPlayerName(source)),
+                                 "mode", "roster", "source", source)
+    end
 
----@type string[]
-local title = {}
+    ---@class RosterModeFilter
+    RosterMode.DefaultFilter = {source = nil}
 
-AddOn.Modes.roster = {
-    defaultFilter = {source = nil},
-    getSubTitle = function(filter, segment, values, totalValue, maxValue)
+    ---@param filter RosterModeFilter
+    function RosterMode.SubTitle(filter, segment, values, totalValue, maxValue)
         local roster = segment and segment.roster
         if not roster then return end
 
@@ -49,32 +50,41 @@ AddOn.Modes.roster = {
             for key, value in next, values, nil do count = count + 1 end
             if count > 0 then return FormatNumber(totalValue / count) end
         end
-    end,
-    getTitle = function(filter, segment)
-        wipe(title)
-        title[#title + 1] = GenerateHyperlink(L.MEMBERS, "mode", "roster")
+    end
 
-        local roster = segment.roster
-        if not roster then return title[1] end
+    do -- Title
+        ---@type string[]
+        local title = {}
 
-        local source = filter.source
-        if source then
-            title[1] = title[1] .. "*"
-            title[#title + 1] = getSourceTitle(source)
+        ---@param filter RosterModeFilter
+        function RosterMode.Title(filter, segment)
+            wipe(title)
+            title[#title + 1] = GenerateHyperlink(L.MEMBERS, "mode", "roster")
+
+            local roster = segment.roster
+            if not roster then return title[1] end
+
+            local source = filter.source
+            if source then
+                title[1] = title[1] .. "*"
+                title[#title + 1] = getSourceTitle(source)
+            end
+
+            return tConcat(title, " - ")
         end
+    end
 
-        return tConcat(title, " - ")
-    end,
-    getValues = function(filter, segment, values, texts, colors, icons, iconCoords)
+    ---@param filter RosterModeFilter
+    function RosterMode.Values(filter, segment, values, texts, colors, icons, iconCoords)
         local roster = segment.roster
-        if not roster then return end
+        if not roster then return 0, false, false end
 
         local maxAmount = 0
 
         local source = filter.source
         if source then
             local playerInfos = roster[source]
-            if not playerInfos then return end
+            if not playerInfos then return 0, false, false end
 
             local inventory = playerInfos.inventory
             if inventory then
@@ -106,9 +116,11 @@ AddOn.Modes.roster = {
             end
         end
 
-        return maxAmount
-    end,
-    menu = function(filter, segment)
+        return maxAmount, false, false
+    end
+
+    ---@param filter RosterModeFilter
+    function RosterMode.Menu(filter, segment)
         local roster = segment.roster
         if not roster then return function() end end
 
@@ -137,26 +149,30 @@ AddOn.Modes.roster = {
 
             return menuInfos
         end
-    end,
-    onClick = function(filter, key, button)
+    end
+
+    ---@param filter RosterModeFilter
+    function RosterMode.OnClick(filter, key, button)
         local source = filter.source
         if source then
             if button == "RightButton" then filter.source = nil end
         else
             filter.source = key
         end
-    end,
-    onHyperlink = function(filter, link, button)
+    end
+
+    ---@param filter RosterModeFilter
+    function RosterMode.OnHyperlink(filter, link, button)
         local linkData = ExtractLink(link)
         if linkData then
             linkData = ArrayToPairs(linkData)
 
             if linkData.mode == "roster" then filter.source = nil end
         end
-    end,
-    perSecond = false,
-    percent = false,
-    tooltip = function(filter, segment, key, tooltip)
+    end
+
+    ---@param filter RosterModeFilter
+    function RosterMode.Tooltip(filter, segment, key, tooltip)
         local roster = segment.roster
 
         local source = filter.source
@@ -197,7 +213,5 @@ AddOn.Modes.roster = {
                 end
             end
         end
-    end,
-}
-AddOn.ModeNames.roster = L.MEMBERS
-AddOn.ModeKeys[#AddOn.ModeKeys + 1] = "roster"
+    end
+end

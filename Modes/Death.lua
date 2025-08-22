@@ -85,53 +85,40 @@ end
 
 local L = AddOn.L
 local DEATH_TITLE = AddOn.GenerateHyperlink(L.DEATH, "mode", "death")
-local DEATH_TITLE_MOD = AddOn.GenerateHyperlink(L.DEATH .. "*", "mode", "death")
 
-local format = format
 local max = max
 local next = next
-local tConcat = table.concat
-local tInsert = table.insert
-local tonumber = tonumber
-local wipe = wipe
-local time = time
 
-local ArrayToPairs = AddOn.ArrayToPairs
-local DropDownMenu = AddOn.DropDownMenu
-local ExtractLink = AddOn.ExtractLink
-local FillSpellTables = AddOn.FillSpellTables
 local FillUnitTables = AddOn.FillUnitTables
 local FormatNumber = AddOn.FormatNumber
-local GetClassColor = AddOn.GetClassColor
-local GetClassIcon = AddOn.GetClassIcon
-local GetDamageClassColor = AddOn.GetDamageClassColor
-local GetPlayerClass = AddOn.GetPlayerClass
-local GetPlayerName = AddOn.GetPlayerName
-local GetSpellIcon = AddOn.GetSpellIcon
-local GetSpellName = AddOn.GetSpellName
-local GetSpellTitleLink = AddOn.GetSpellTitleLink
-local GetUnitTitleLink = AddOn.GetUnitTitleLink
-local SortMenuInfos = AddOn.SortMenuInfos
 
----@param filter table
----@param data DeathData?
----@return number
-local function getAmount(filter, data) return data and data.amount or 0 end
+local DeathMode = AddOn.RegisterMode("death", L.DEATH)
+if DeathMode then
+    ---@param filter DeathModeFilter
+    ---@param data DeathData?
+    ---@return number
+    local function getAmount(filter, data) return data and data.amount or 0 end
 
-AddOn.Modes.death = {
-    defaultFilter = {},
-    getSubTitle = function(filter, segment, values, totalValue, maxValue)
+    ---@class DeathModeFilter
+    DeathMode.DefaultFilter = {}
+
+    ---@param filter DeathModeFilter
+    function DeathMode.SubTitle(filter, segment, values, totalValue, maxValue)
         ---@type Death?
         local death = segment and segment.death
         if not death then return end
 
         return FormatNumber(death.amount)
-    end,
-    getTitle = function(filter, segment) return DEATH_TITLE end,
-    getValues = function(filter, segment, values, texts, colors, icons, iconCoords)
+    end
+
+    ---@param filter DeathModeFilter
+    function DeathMode.Title(filter, segment) return DEATH_TITLE end
+
+    ---@param filter DeathModeFilter
+    function DeathMode.Values(filter, segment, values, texts, colors, icons, iconCoords)
         ---@type Death?
         local death = segment.death
-        if not death then return end
+        if not death then return 0, false, true end
 
         local maxAmount = 0
 
@@ -144,17 +131,15 @@ AddOn.Modes.death = {
             end
         end
 
-        return maxAmount
-    end,
-    perSecond = false,
-    percent = true,
-    tooltip = function(filter, segment, key, tooltip)
+        return maxAmount, false, true
+    end
+
+    ---@param filter DeathModeFilter
+    function DeathMode.Tooltip(filter, segment, key, tooltip)
         ---@type Death?
         local death = segment.death
         if not death then return end
 
         tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
-    end,
-}
-AddOn.ModeNames.death = L.DEATH
-AddOn.ModeKeys[#AddOn.ModeKeys + 1] = "death"
+    end
+end

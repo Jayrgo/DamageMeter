@@ -220,66 +220,83 @@ local GetSpellTitleLink = AddOn.GetSpellTitleLink
 local GetUnitTitleLink = AddOn.GetUnitTitleLink
 local SortMenuInfos = AddOn.SortMenuInfos
 
----@param filter table
----@param data InterruptData?
----@return number
-local function getAmount(filter, data)
-    if not data then return 0 end
+local InterruptMode = AddOn.RegisterMode("interrupt", L.INTERRUPT)
+if InterruptMode then
+    ---@param filter InterruptModeFilter
+    ---@param data InterruptData?
+    ---@return number
+    local function getAmount(filter, data)
+        if not data then return 0 end
 
-    local amount = data.amount or 0
-    if filter.group then
-        amount = amount + (data.groupAmount or 0)
-        if filter.pets then amount = amount + (data.petGroupAmount or 0) end
+        local amount = data.amount or 0
+        if filter.group then
+            amount = amount + (data.groupAmount or 0)
+            if filter.pets then amount = amount + (data.petGroupAmount or 0) end
+        end
+        if filter.pets then amount = amount + (data.petAmount or 0) end
+        return amount > 0 and amount or 0
     end
-    if filter.pets then amount = amount + (data.petAmount or 0) end
-    return amount > 0 and amount or 0
-end
 
----@type string[]
-local title = {}
+    ---@class InterruptModeFilter
+    InterruptMode.DefaultFilter = {
+        show = "sources",
+        source = nil,
+        spell = nil,
+        target = nil,
+        pets = true,
+        group = false,
+    }
 
-AddOn.Modes.interrupt = {
-    defaultFilter = {show = "sources", source = nil, spell = nil, target = nil, pets = true, group = false},
-    getSubTitle = function(filter, segment, values, totalValue, maxValue)
+    ---@param filter InterruptModeFilter
+    function InterruptMode.SubTitle(filter, segment, values, totalValue, maxValue)
         if not segment then return end
 
         if totalValue > 0 then
             return format("%s (%s)", FormatNumber(totalValue), FormatNumber(totalValue / segment:GetDuration()))
         end
-    end,
-    getTitle = function(filter, segment)
-        wipe(title)
-        title[#title + 1] = INTERRUPT_TITLE
+    end
 
-        ---@type Interrupt?
-        local interrupt = segment and segment.interrupt
-        if not interrupt then return title[1] end
+    do -- Title
+        ---@type string[]
+        local title = {}
 
-        if filter.show ~= "sources" then title[1] = INTERRUPT_TITLE_MOD end
+        ---@param filter InterruptModeFilter
+        function InterruptMode.Title(filter, segment)
+            wipe(title)
+            title[#title + 1] = INTERRUPT_TITLE
 
-        local source = filter.source
-        local spell = filter.spell
-        local target = filter.target
+            ---@type Interrupt?
+            local interrupt = segment and segment.interrupt
+            if not interrupt then return title[1] end
 
-        if source then
-            title[1] = INTERRUPT_TITLE_MOD
-            title[#title + 1] = GetUnitTitleLink("interrupt", source, interrupt.sources[source], "source")
+            if filter.show ~= "sources" then title[1] = INTERRUPT_TITLE_MOD end
+
+            local source = filter.source
+            local spell = filter.spell
+            local target = filter.target
+
+            if source then
+                title[1] = INTERRUPT_TITLE_MOD
+                title[#title + 1] = GetUnitTitleLink("interrupt", source, interrupt.sources[source], "source")
+            end
+            if spell then
+                title[1] = INTERRUPT_TITLE_MOD
+                title[#title + 1] = GetSpellTitleLink("interrupt", spell, interrupt.spells[spell])
+            end
+            if target then
+                title[1] = INTERRUPT_TITLE_MOD
+                title[#title + 1] = GetUnitTitleLink("interrupt", target, interrupt.targets[target], "target")
+            end
+
+            return tConcat(title, " - ")
         end
-        if spell then
-            title[1] = INTERRUPT_TITLE_MOD
-            title[#title + 1] = GetSpellTitleLink("interrupt", spell, interrupt.spells[spell])
-        end
-        if target then
-            title[1] = INTERRUPT_TITLE_MOD
-            title[#title + 1] = GetUnitTitleLink("interrupt", target, interrupt.targets[target], "target")
-        end
+    end
 
-        return tConcat(title, " - ")
-    end,
-    getValues = function(filter, segment, values, texts, colors, icons, iconCoords)
+    ---@param filter InterruptModeFilter
+    function InterruptMode.Values(filter, segment, values, texts, colors, icons, iconCoords)
         ---@type Interrupt?
         local interrupt = segment.interrupt
-        if not interrupt then return end
+        if not interrupt then return 0, true, true end
 
         local show = filter.show
         local source = filter.source
@@ -290,15 +307,15 @@ AddOn.Modes.interrupt = {
 
         if source then
             local sourceData = interrupt.sources[source]
-            if not sourceData then return end
+            if not sourceData then return 0, true, true end
 
             if spell then
                 local spellData = sourceData.spells[spell]
-                if not spellData then return end
+                if not spellData then return 0, true, true end
 
                 if target then
                     local targetData = spellData.targets[target]
-                    if not targetData then return end
+                    if not targetData then return 0, true, true end
 
                     local amount = getAmount(filter, targetData)
                     if amount > 0 then
@@ -341,7 +358,7 @@ AddOn.Modes.interrupt = {
             elseif target then
                 if show == "sources" then
                     local targetData = sourceData.targets[target]
-                    if not targetData then return end
+                    if not targetData then return 0, true, true end
 
                     local amount = getAmount(filter, targetData)
                     if amount > 0 then
@@ -360,7 +377,7 @@ AddOn.Modes.interrupt = {
                     end
                 elseif show == "targets" then
                     local targetData = sourceData.targets[target]
-                    if not targetData then return end
+                    if not targetData then return 0, true, true end
 
                     local amount = getAmount(filter, targetData)
                     if amount > 0 then
@@ -416,7 +433,7 @@ AddOn.Modes.interrupt = {
                     end
                 elseif show == "spells" then
                     local spellData = interrupt.spells[spell]
-                    if not spellData then return end
+                    if not spellData then return 0, true, true end
 
                     local amount = getAmount(filter, spellData.targets[target])
                     if amount > 0 then
@@ -426,10 +443,10 @@ AddOn.Modes.interrupt = {
                     end
                 elseif show == "targets" then
                     local spellData = interrupt.spells[spell]
-                    if not spellData then return end
+                    if not spellData then return 0, true, true end
 
                     local targetData = spellData.targets[target]
-                    if not targetData then return end
+                    if not targetData then return 0, true, true end
 
                     local amount = getAmount(filter, targetData)
                     if amount > 0 then
@@ -450,7 +467,7 @@ AddOn.Modes.interrupt = {
                     end
                 elseif show == "spells" then
                     local spellData = interrupt.spells[spell]
-                    if not spellData then return end
+                    if not spellData then return 0, true, true end
 
                     local amount = getAmount(filter, spellData)
                     if amount > 0 then
@@ -460,7 +477,7 @@ AddOn.Modes.interrupt = {
                     end
                 elseif show == "targets" then
                     local spellData = interrupt.spells[spell]
-                    if not spellData then return end
+                    if not spellData then return 0, true, true end
 
                     for key, data in next, spellData.targets, nil do
                         local amount = getAmount(filter, data)
@@ -474,7 +491,7 @@ AddOn.Modes.interrupt = {
             end
         elseif target then
             local targetData = interrupt.targets[target]
-            if not targetData then return end
+            if not targetData then return 0, true, true end
 
             if show == "sources" then
                 for key, data in next, interrupt.sources, nil do
@@ -534,8 +551,10 @@ AddOn.Modes.interrupt = {
         end
 
         return maxAmount
-    end,
-    menu = function(filter, segment)
+    end
+
+    ---@param filter InterruptModeFilter
+    function InterruptMode.Menu(filter, segment)
         ---@type Interrupt?
         local interrupt = segment and segment.interrupt
 
@@ -696,8 +715,10 @@ AddOn.Modes.interrupt = {
                 },
             }
         end
-    end,
-    onClick = function(filter, key, button)
+    end
+
+    ---@param filter InterruptModeFilter
+    function InterruptMode.OnClick(filter, key, button)
         local show = filter.show
         local source = filter.source
         local spell = filter.spell
@@ -858,8 +879,10 @@ AddOn.Modes.interrupt = {
                 end
             end
         end
-    end,
-    onHyperlink = function(filter, link, button)
+    end
+
+    ---@param filter InterruptModeFilter
+    function InterruptMode.OnHyperlink(filter, link, button)
         local linkData = ExtractLink(link)
         if linkData then
             linkData = ArrayToPairs(linkData)
@@ -898,10 +921,10 @@ AddOn.Modes.interrupt = {
                 end
             end
         end
-    end,
-    perSecond = true,
-    percent = true,
-    tooltip = function(filter, segment, key, tooltip)
+    end
+
+    ---@param filter InterruptModeFilter
+    function InterruptMode.Tooltip(filter, segment, key, tooltip)
         ---@type Interrupt?
         local interrupt = segment.interrupt
         if not interrupt then return end
@@ -1045,7 +1068,7 @@ AddOn.Modes.interrupt = {
                         tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[target]), data)
                     end
                     tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, interrupt.spells[key] and
-                                                                       interrupt.spells[key].targets[target]))
+                                                                    interrupt.spells[key].targets[target]))
                 elseif show == "targets" then
                     tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
 
@@ -1054,7 +1077,7 @@ AddOn.Modes.interrupt = {
                         tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[key]), data)
                     end
                     tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, interrupt.spells[spell] and
-                                                                       interrupt.spells[spell].targets[key]))
+                                                                    interrupt.spells[spell].targets[key]))
                 end
             else
                 if show == "sources" then
@@ -1095,7 +1118,7 @@ AddOn.Modes.interrupt = {
                         tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[key]), data)
                     end
                     tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, interrupt.spells[spell] and
-                                                                       interrupt.spells[spell].targets[key]))
+                                                                    interrupt.spells[spell].targets[key]))
                 end
             end
         elseif target then
@@ -1117,7 +1140,7 @@ AddOn.Modes.interrupt = {
                     tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[target]), data)
                 end
                 tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, interrupt.spells[key] and
-                                                                   interrupt.spells[key].targets[target]))
+                                                                interrupt.spells[key].targets[target]))
             elseif show == "targets" then
                 tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
 
@@ -1191,7 +1214,5 @@ AddOn.Modes.interrupt = {
                 tooltip:ProcessSpellAmounts(amount)
             end
         end
-    end,
-}
-AddOn.ModeNames.interrupt = L.INTERRUPT
-AddOn.ModeKeys[#AddOn.ModeKeys + 1] = "interrupt"
+    end
+end

@@ -270,66 +270,76 @@ local GetSpellTitleLink = AddOn.GetSpellTitleLink
 local GetUnitTitleLink = AddOn.GetUnitTitleLink
 local SortMenuInfos = AddOn.SortMenuInfos
 
----@param filter table
----@param data DispelData?
----@return number
-local function getAmount(filter, data)
-    if not data then return 0 end
+local DispelMode = AddOn.RegisterMode("dispel", L.DISPEL)
+if DispelMode then
+    ---@param filter DispelModeFilter
+    ---@param data DispelData?
+    ---@return number
+    local function getAmount(filter, data)
+        if not data then return 0 end
 
-    local amount = data.amount or 0
-    if filter.group then
-        amount = amount + (data.groupAmount or 0)
-        if filter.pets then amount = amount + (data.petGroupAmount or 0) end
+        local amount = data.amount or 0
+        if filter.group then
+            amount = amount + (data.groupAmount or 0)
+            if filter.pets then amount = amount + (data.petGroupAmount or 0) end
+        end
+        if filter.pets then amount = amount + (data.petAmount or 0) end
+        return amount > 0 and amount or 0
     end
-    if filter.pets then amount = amount + (data.petAmount or 0) end
-    return amount > 0 and amount or 0
-end
 
----@type string[]
-local title = {}
+    ---@class DispelModeFilter
+    DispelMode.DefaultFilter = {show = "sources", source = nil, spell = nil, target = nil, pets = true, group = false}
 
-AddOn.Modes.dispel = {
-    defaultFilter = {show = "sources", source = nil, spell = nil, target = nil, pets = true, group = false},
-    getSubTitle = function(filter, segment, values, totalValue, maxValue)
+    ---@param filter DispelModeFilter
+    function DispelMode.SubTitle(filter, segment, values, totalValue, maxValue)
         if not segment then return end
 
         if totalValue > 0 then
             return format("%s (%s)", FormatNumber(totalValue), FormatNumber(totalValue / segment:GetDuration()))
         end
-    end,
-    getTitle = function(filter, segment)
-        wipe(title)
-        title[#title + 1] = DISPEL_TITLE
+    end
 
-        ---@type Dispel?
-        local dispel = segment and segment.dispel
-        if not dispel then return title[1] end
+    do -- Title
+        ---@type string[]
+        local title = {}
 
-        if filter.show ~= "sources" then title[1] = DISPEL_TITLE_MOD end
+        ---@param filter DispelModeFilter
+        function DispelMode.Title(filter, segment)
+            wipe(title)
+            title[#title + 1] = DISPEL_TITLE
 
-        local source = filter.source
-        local spell = filter.spell
-        local target = filter.target
+            ---@type Dispel?
+            local dispel = segment and segment.dispel
+            if not dispel then return title[1] end
 
-        if source then
-            title[1] = DISPEL_TITLE_MOD
-            title[#title + 1] = GetUnitTitleLink("dispel", source, dispel.sources[source], "source")
+            if filter.show ~= "sources" then title[1] = DISPEL_TITLE_MOD end
+
+            local source = filter.source
+            local spell = filter.spell
+            local target = filter.target
+
+            if source then
+                title[1] = DISPEL_TITLE_MOD
+                title[#title + 1] = GetUnitTitleLink("dispel", source, dispel.sources[source], "source")
+            end
+            if spell then
+                title[1] = DISPEL_TITLE_MOD
+                title[#title + 1] = GetSpellTitleLink("dispel", spell, dispel.spells[spell])
+            end
+            if target then
+                title[1] = DISPEL_TITLE_MOD
+                title[#title + 1] = GetUnitTitleLink("dispel", target, dispel.targets[target], "target")
+            end
+
+            return tConcat(title, " - ")
         end
-        if spell then
-            title[1] = DISPEL_TITLE_MOD
-            title[#title + 1] = GetSpellTitleLink("dispel", spell, dispel.spells[spell])
-        end
-        if target then
-            title[1] = DISPEL_TITLE_MOD
-            title[#title + 1] = GetUnitTitleLink("dispel", target, dispel.targets[target], "target")
-        end
+    end
 
-        return tConcat(title, " - ")
-    end,
-    getValues = function(filter, segment, values, texts, colors, icons, iconCoords)
+    ---@param filter DispelModeFilter
+    function DispelMode.Values(filter, segment, values, texts, colors, icons, iconCoords)
         ---@type Dispel?
         local dispel = segment.dispel
-        if not dispel then return end
+        if not dispel then return 0, true, true end
 
         local show = filter.show
         local source = filter.source
@@ -340,15 +350,15 @@ AddOn.Modes.dispel = {
 
         if source then
             local sourceData = dispel.sources[source]
-            if not sourceData then return end
+            if not sourceData then return 0, true, true end
 
             if spell then
                 local spellData = sourceData.spells[spell]
-                if not spellData then return end
+                if not spellData then return 0, true, true end
 
                 if target then
                     local targetData = spellData.targets[target]
-                    if not targetData then return end
+                    if not targetData then return 0, true, true end
 
                     local amount = getAmount(filter, targetData)
                     if amount > 0 then
@@ -391,7 +401,7 @@ AddOn.Modes.dispel = {
             elseif target then
                 if show == "sources" then
                     local targetData = sourceData.targets[target]
-                    if not targetData then return end
+                    if not targetData then return 0, true, true end
 
                     local amount = getAmount(filter, targetData)
                     if amount > 0 then
@@ -410,7 +420,7 @@ AddOn.Modes.dispel = {
                     end
                 elseif show == "targets" then
                     local targetData = sourceData.targets[target]
-                    if not targetData then return end
+                    if not targetData then return 0, true, true end
 
                     local amount = getAmount(filter, targetData)
                     if amount > 0 then
@@ -466,7 +476,7 @@ AddOn.Modes.dispel = {
                     end
                 elseif show == "spells" then
                     local spellData = dispel.spells[spell]
-                    if not spellData then return end
+                    if not spellData then return 0, true, true end
 
                     local amount = getAmount(filter, spellData.targets[target])
                     if amount > 0 then
@@ -476,10 +486,10 @@ AddOn.Modes.dispel = {
                     end
                 elseif show == "targets" then
                     local spellData = dispel.spells[spell]
-                    if not spellData then return end
+                    if not spellData then return 0, true, true end
 
                     local targetData = spellData.targets[target]
-                    if not targetData then return end
+                    if not targetData then return 0, true, true end
 
                     local amount = getAmount(filter, targetData)
                     if amount > 0 then
@@ -500,7 +510,7 @@ AddOn.Modes.dispel = {
                     end
                 elseif show == "spells" then
                     local spellData = dispel.spells[spell]
-                    if not spellData then return end
+                    if not spellData then return 0, true, true end
 
                     local amount = getAmount(filter, spellData)
                     if amount > 0 then
@@ -510,7 +520,7 @@ AddOn.Modes.dispel = {
                     end
                 elseif show == "targets" then
                     local spellData = dispel.spells[spell]
-                    if not spellData then return end
+                    if not spellData then return 0, true, true end
 
                     for key, data in next, spellData.targets, nil do
                         local amount = getAmount(filter, data)
@@ -524,7 +534,7 @@ AddOn.Modes.dispel = {
             end
         elseif target then
             local targetData = dispel.targets[target]
-            if not targetData then return end
+            if not targetData then return 0, true, true end
 
             if show == "sources" then
                 for key, data in next, dispel.sources, nil do
@@ -583,9 +593,11 @@ AddOn.Modes.dispel = {
             end
         end
 
-        return maxAmount
-    end,
-    menu = function(filter, segment)
+        return maxAmount, true, true
+    end
+
+    ---@param filter DispelModeFilter
+    function DispelMode.Menu(filter, segment)
         ---@type Dispel?
         local dispel = segment and segment.dispel
 
@@ -746,8 +758,10 @@ AddOn.Modes.dispel = {
                 },
             }
         end
-    end,
-    onClick = function(filter, key, button)
+    end
+
+    ---@param filter DispelModeFilter
+    function DispelMode.OnClick(filter, key, button)
         local show = filter.show
         local source = filter.source
         local spell = filter.spell
@@ -908,8 +922,10 @@ AddOn.Modes.dispel = {
                 end
             end
         end
-    end,
-    onHyperlink = function(filter, link, button)
+    end
+
+    ---@param filter DispelModeFilter
+    function DispelMode.OnHyperlink(filter, link, button)
         local linkData = ExtractLink(link)
         if linkData then
             linkData = ArrayToPairs(linkData)
@@ -948,10 +964,10 @@ AddOn.Modes.dispel = {
                 end
             end
         end
-    end,
-    perSecond = true,
-    percent = true,
-    tooltip = function(filter, segment, key, tooltip)
+    end
+
+    ---@param filter DispelModeFilter
+    function DispelMode.Tooltip(filter, segment, key, tooltip)
         ---@type Dispel?
         local dispel = segment.dispel
         if not dispel then return end
@@ -1095,7 +1111,7 @@ AddOn.Modes.dispel = {
                         tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[target]), data)
                     end
                     tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, dispel.spells[key] and
-                                                                       dispel.spells[key].targets[target]))
+                                                                    dispel.spells[key].targets[target]))
                 elseif show == "targets" then
                     tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
 
@@ -1104,7 +1120,7 @@ AddOn.Modes.dispel = {
                         tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[key]), data)
                     end
                     tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, dispel.spells[spell] and
-                                                                       dispel.spells[spell].targets[key]))
+                                                                    dispel.spells[spell].targets[key]))
                 end
             else
                 if show == "sources" then
@@ -1145,7 +1161,7 @@ AddOn.Modes.dispel = {
                         tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[key]), data)
                     end
                     tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, dispel.spells[spell] and
-                                                                       dispel.spells[spell].targets[key]))
+                                                                    dispel.spells[spell].targets[key]))
                 end
             end
         elseif target then
@@ -1167,7 +1183,7 @@ AddOn.Modes.dispel = {
                     tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[target]), data)
                 end
                 tooltip:ProcessUnitAmounts(L.SOURCE,
-                                           getAmount(filter, dispel.spells[key] and dispel.spells[key].targets[target]))
+                                        getAmount(filter, dispel.spells[key] and dispel.spells[key].targets[target]))
             elseif show == "targets" then
                 tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
 
@@ -1241,7 +1257,5 @@ AddOn.Modes.dispel = {
                 tooltip:ProcessSpellAmounts(amount)
             end
         end
-    end,
-}
-AddOn.ModeNames.dispel = L.DISPEL
-AddOn.ModeKeys[#AddOn.ModeKeys + 1] = "dispel"
+    end
+end

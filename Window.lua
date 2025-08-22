@@ -28,9 +28,9 @@ local FormatTimestamp = AddOn.FormatTimestamp
 local GetScreenWidth = GetScreenWidth
 local IsModifierKeyDown = IsModifierKeyDown
 local Mixin = AddOn.Mixin
+local Mode = AddOn.Mode
 local ModeKeys = AddOn.ModeKeys
-local ModeNames = AddOn.ModeNames
-local Modes = AddOn.Modes
+local ModeName = AddOn.ModeName
 local Segments = AddOn.Segments
 local Tooltip = AddOn.Tooltip
 
@@ -200,7 +200,7 @@ function(frame)
     ---@type Segment?
     local segment = AddOn.GetCombatSegment()
     ---@type string
-    local modeKey = AddOn.ModeKeys[1]
+    local modeKey = "damageDone"
     ---@type Mode?
     local mode
     ---@type Segment
@@ -349,8 +349,7 @@ function(frame)
     modeButton.OnEnter = function(self, motion)
         Tooltip:SetOwner(self, "ANCHOR_RIGHT")
         Tooltip:SetTitle(L.MODE)
-        local modeName = modeKey and ModeNames[modeKey]
-        if modeName then Tooltip:AddLine(modeName) end
+        Tooltip:AddLine(ModeName(modeKey))
         Tooltip:Show()
     end
     modeButton.OnLeave = hideTooltip
@@ -365,21 +364,21 @@ function(frame)
             info.arg = window
             info.func = setMode
 
-            local modes = ModeKeys
+            local modes = ModeKeys()
             for i = 1, #modes, 1 do
                 local key = modes[i]
 
                 info.hasArrow = false
                 info.menu = nil
                 if modeKey == key then
-                    if segment and mode and mode.menu then
+                    if segment and mode and mode.Menu then
                         info.hasArrow = true
-                        info.menu = mode.menu(filter, segment)
+                        info.menu = mode.Menu(filter, segment)
                     end
                 end
 
                 info.isChecked = modeKey == key
-                info.text = ModeNames[key]
+                info.text = ModeName(key)
                 info.value = key
                 DropDownMenu:AddButton(level, info, false)
             end
@@ -467,7 +466,7 @@ function(frame)
     ---@param width number
     ---@param height number
     function(self, link, text, button, region, left, bottom, width, height)
-        if mode and mode.onHyperlink then mode.onHyperlink(filter, link, button) end
+        if mode and mode.OnHyperlink then mode.OnHyperlink(filter, link, button) end
     end)
 
     local textLeft = textFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightLeft")
@@ -535,8 +534,8 @@ function(frame)
             Tooltip:SetPoint("TOPLEFT", bar, "TOPRIGHT", 0, 0)
         end
 
-        if mode.tooltip then
-            mode.tooltip(filter, segment, bar:GetData("key"), Tooltip)
+        if mode.Tooltip then
+            mode.Tooltip(filter, segment, bar:GetData("key"), Tooltip)
             Tooltip:Show()
         else
             Tooltip:Hide()
@@ -564,7 +563,7 @@ function(frame)
         if not segment then return end
         if not mode then return end
 
-        if mode.onClick then mode.onClick(filter, bar:GetData("key"), button) end
+        if mode.OnClick then mode.OnClick(filter, bar:GetData("key"), button) end
     end
 
     local barPool = CreateBarPool(barFrame, function(pool, bar)
@@ -614,6 +613,10 @@ function(frame)
 
     ---@type number
     local maxValue = 0
+    ---@type boolean
+    local perSecond = false
+    ---@type boolean
+    local percent = false
     ---@type number
     local totalValue = 0
     ---@type table<any, number>
@@ -647,15 +650,15 @@ function(frame)
             if not segment then return end
             if not mode then return end
 
-            maxValue = mode.getValues(filter, segment, values, texts, colors, icons, iconCoords) or 0
+            maxValue, perSecond, percent = mode.Values(filter, segment, values, texts, colors, icons, iconCoords)
             for key, value in next, values, nil do totalValue = totalValue + value end
         end,
         function()
             if not segment then return end
             if not mode then return end
 
-            local duration = mode.perSecond and segment:GetDuration() or nil
-            local total = mode.percent and (mouseOverBar and mouseOverBar:GetValue(false) or totalValue) or nil
+            local duration = perSecond and segment:GetDuration() or nil
+            local total = percent and (mouseOverBar and mouseOverBar:GetValue(false) or totalValue) or nil
 
             for key, value in next, values, nil do
                 if value > 0 then
@@ -703,8 +706,8 @@ function(frame)
 
             if not mode then return end
 
-            textLeft:SetText(mode.getTitle(filter, segment))
-            textRight:SetText(mode.getSubTitle and mode.getSubTitle(filter, segment, values, totalValue, maxValue))
+            textLeft:SetText(mode.Title(filter, segment))
+            textRight:SetText(mode.SubTitle and mode.SubTitle(filter, segment, values, totalValue, maxValue))
         end,
         function()
             local widthRight = textRight:GetUnboundedStringWidth()
@@ -752,10 +755,10 @@ function(frame)
     function window:SetMode(key)
         updateState = 0
         modeKey = key
-        mode = Modes[key]
+        mode = Mode(key)
         if mode then
             wipe(filter)
-            for k, v in next, mode.defaultFilter or {}, nil do filter[k] = v end
+            for k, v in next, mode.DefaultFilter or {}, nil do filter[k] = v end
         end
     end
     window:SetMode(modeKey)

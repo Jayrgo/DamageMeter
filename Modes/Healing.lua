@@ -316,7 +316,7 @@ local GetSpellTitleLink = AddOn.GetSpellTitleLink
 local GetUnitTitleLink = AddOn.GetUnitTitleLink
 local SortMenuInfos = AddOn.SortMenuInfos
 
----@param filter table
+---@param filter HealingDoneModeFilter | HealingTakenModeFilter
 ---@param data HealingDoneData|HealingTakenData?
 ---@return number
 local function getAmount(filter, data)
@@ -333,11 +333,10 @@ local function getAmount(filter, data)
     return amount
 end
 
----@type string[]
-local title = {}
-
-AddOn.Modes.healingDone = {
-    defaultFilter = {
+local HealingDoneMode = AddOn.RegisterMode("healingDone", L.HEALING_DONE)
+if HealingDoneMode then
+    ---@class HealingDoneModeFilter
+    HealingDoneMode.DefaultFilter = {
         show = "sources",
         source = nil,
         spell = nil,
@@ -345,47 +344,58 @@ AddOn.Modes.healingDone = {
         pets = true,
         overhealing = false,
         absorbed = true,
-    },
-    getSubTitle = function(filter, segment, values, totalValue, maxValue)
+    }
+
+    ---@param filter HealingDoneModeFilter
+    function HealingDoneMode.SubTitle(filter, segment, values, totalValue, maxValue)
         if not segment then return end
 
         if totalValue > 0 then
             return format("%s (%s)", FormatNumber(totalValue), FormatNumber(totalValue / segment:GetDuration()))
         end
-    end,
-    getTitle = function(filter, segment)
-        wipe(title)
-        title[#title + 1] = HEALING_DONE_TITLE
+    end
 
-        ---@type HealingDone?
-        local healingDone = segment and segment.healingDone
-        if not healingDone then return title[1] end
+    do -- Title
+        ---@type string[]
+        local title = {}
 
-        if filter.show ~= "sources" then title[1] = HEALING_DONE_TITLE_MOD end
+        ---@param filter HealingDoneModeFilter
+        function HealingDoneMode.Title(filter, segment)
+            wipe(title)
+            title[#title + 1] = HEALING_DONE_TITLE
 
-        local source = filter.source
-        local spell = filter.spell
-        local target = filter.target
+            ---@type HealingDone?
+            local healingDone = segment and segment.healingDone
+            if not healingDone then return title[1] end
 
-        if source then
-            title[1] = HEALING_DONE_TITLE_MOD
-            title[#title + 1] = GetUnitTitleLink("healingDone", source, healingDone.sources[source], "source")
+            if filter.show ~= "sources" then title[1] = HEALING_DONE_TITLE_MOD end
+
+            local source = filter.source
+            local spell = filter.spell
+            local target = filter.target
+
+            if source then
+                title[1] = HEALING_DONE_TITLE_MOD
+                title[#title + 1] = GetUnitTitleLink("healingDone", source, healingDone.sources[source], "source")
+            end
+            if spell then
+                title[1] = HEALING_DONE_TITLE_MOD
+                title[#title + 1] = GetSpellTitleLink("healingDone", spell, healingDone.spells[spell])
+            end
+            if target then
+                title[1] = HEALING_DONE_TITLE_MOD
+                title[#title + 1] = GetUnitTitleLink("healingDone", target, healingDone.targets[target], "target")
+            end
+
+            return tConcat(title, " - ")
         end
-        if spell then
-            title[1] = HEALING_DONE_TITLE_MOD
-            title[#title + 1] = GetSpellTitleLink("healingDone", spell, healingDone.spells[spell])
-        end
-        if target then
-            title[1] = HEALING_DONE_TITLE_MOD
-            title[#title + 1] = GetUnitTitleLink("healingDone", target, healingDone.targets[target], "target")
-        end
+    end
 
-        return tConcat(title, " - ")
-    end,
-    getValues = function(filter, segment, values, texts, colors, icons, iconCoords)
+    ---@param filter HealingDoneModeFilter
+    function HealingDoneMode.Values(filter, segment, values, texts, colors, icons, iconCoords)
         ---@type HealingDone?
         local healingDone = segment.healingDone
-        if not healingDone then return end
+        if not healingDone then return 0, false, false end
 
         local show = filter.show
         local source = filter.source
@@ -396,15 +406,15 @@ AddOn.Modes.healingDone = {
 
         if source then
             local sourceData = healingDone.sources[source]
-            if not sourceData then return end
+            if not sourceData then return 0, false, false end
 
             if spell then
                 local spellData = sourceData.spells[spell]
-                if not spellData then return end
+                if not spellData then return 0, false, false end
 
                 if target then
                     local targetData = spellData.targets[target]
-                    if not targetData then return end
+                    if not targetData then return 0, false, false end
 
                     local amount = getAmount(filter, targetData)
                     if amount > 0 then
@@ -447,7 +457,7 @@ AddOn.Modes.healingDone = {
             elseif target then
                 if show == "sources" then
                     local targetData = sourceData.targets[target]
-                    if not targetData then return end
+                    if not targetData then return 0, false, false end
 
                     local amount = getAmount(filter, targetData)
                     if amount > 0 then
@@ -466,7 +476,7 @@ AddOn.Modes.healingDone = {
                     end
                 elseif show == "targets" then
                     local targetData = sourceData.targets[target]
-                    if not targetData then return end
+                    if not targetData then return 0, false, false end
 
                     local amount = getAmount(filter, targetData)
                     if amount > 0 then
@@ -522,7 +532,7 @@ AddOn.Modes.healingDone = {
                     end
                 elseif show == "spells" then
                     local spellData = healingDone.spells[spell]
-                    if not spellData then return end
+                    if not spellData then return 0, false, false end
 
                     local amount = getAmount(filter, spellData.targets[target])
                     if amount > 0 then
@@ -532,10 +542,10 @@ AddOn.Modes.healingDone = {
                     end
                 elseif show == "targets" then
                     local spellData = healingDone.spells[spell]
-                    if not spellData then return end
+                    if not spellData then return 0, false, false end
 
                     local targetData = spellData.targets[target]
-                    if not targetData then return end
+                    if not targetData then return 0, false, false end
 
                     local amount = getAmount(filter, targetData)
                     if amount > 0 then
@@ -556,7 +566,7 @@ AddOn.Modes.healingDone = {
                     end
                 elseif show == "spells" then
                     local spellData = healingDone.spells[spell]
-                    if not spellData then return end
+                    if not spellData then return 0, false, false end
 
                     local amount = getAmount(filter, spellData)
                     if amount > 0 then
@@ -566,7 +576,7 @@ AddOn.Modes.healingDone = {
                     end
                 elseif show == "targets" then
                     local spellData = healingDone.spells[spell]
-                    if not spellData then return end
+                    if not spellData then return 0, false, false end
 
                     for key, data in next, spellData.targets, nil do
                         local amount = getAmount(filter, data)
@@ -580,7 +590,7 @@ AddOn.Modes.healingDone = {
             end
         elseif target then
             local targetData = healingDone.targets[target]
-            if not targetData then return end
+            if not targetData then return 0, false, false end
 
             if show == "sources" then
                 for key, data in next, healingDone.sources, nil do
@@ -639,9 +649,11 @@ AddOn.Modes.healingDone = {
             end
         end
 
-        return maxAmount
-    end,
-    menu = function(filter, segment)
+        return maxAmount, true, true
+    end
+
+    ---@param filter HealingDoneModeFilter
+    function HealingDoneMode.Menu(filter, segment)
         ---@type HealingDone?
         local healingDone = segment and segment.healingDone
 
@@ -809,8 +821,10 @@ AddOn.Modes.healingDone = {
                 },
             }
         end
-    end,
-    onClick = function(filter, key, button)
+    end
+
+    ---@param filter HealingDoneModeFilter
+    function HealingDoneMode.OnClick(filter, key, button)
         local show = filter.show
         local source = filter.source
         local spell = filter.spell
@@ -971,8 +985,10 @@ AddOn.Modes.healingDone = {
                 end
             end
         end
-    end,
-    onHyperlink = function(filter, link, button)
+    end
+
+    ---@param filter HealingDoneModeFilter
+    function HealingDoneMode.OnHyperlink(filter, link, button)
         local linkData = ExtractLink(link)
         if linkData then
             linkData = ArrayToPairs(linkData)
@@ -1012,10 +1028,10 @@ AddOn.Modes.healingDone = {
                 end
             end
         end
-    end,
-    perSecond = true,
-    percent = true,
-    tooltip = function(filter, segment, key, tooltip)
+    end
+
+    ---@param filter HealingDoneModeFilter
+    function HealingDoneMode.Tooltip(filter, segment, key, tooltip)
         ---@type HealingDone?
         local healingDone = segment.healingDone
         if not healingDone then return end
@@ -1159,7 +1175,7 @@ AddOn.Modes.healingDone = {
                         tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[target]), data)
                     end
                     tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, healingDone.spells[key] and
-                                                                       healingDone.spells[key].targets[target]))
+                                                                    healingDone.spells[key].targets[target]))
                 elseif show == "targets" then
                     tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
 
@@ -1168,7 +1184,7 @@ AddOn.Modes.healingDone = {
                         tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[key]), data)
                     end
                     tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, healingDone.spells[spell] and
-                                                                       healingDone.spells[spell].targets[key]))
+                                                                    healingDone.spells[spell].targets[key]))
                 end
             else
                 if show == "sources" then
@@ -1209,7 +1225,7 @@ AddOn.Modes.healingDone = {
                         tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[key]), data)
                     end
                     tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, healingDone.spells[spell] and
-                                                                       healingDone.spells[spell].targets[key]))
+                                                                    healingDone.spells[spell].targets[key]))
                 end
             end
         elseif target then
@@ -1231,7 +1247,7 @@ AddOn.Modes.healingDone = {
                     tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[target]), data)
                 end
                 tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, healingDone.spells[key] and
-                                                                   healingDone.spells[key].targets[target]))
+                                                                healingDone.spells[key].targets[target]))
             elseif show == "targets" then
                 tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
 
@@ -1305,53 +1321,71 @@ AddOn.Modes.healingDone = {
                 tooltip:ProcessSpellAmounts(amount)
             end
         end
-    end,
-}
-AddOn.ModeNames.healingDone = L.HEALING_DONE
-AddOn.ModeKeys[#AddOn.ModeKeys + 1] = "healingDone"
+    end
+end
 
-AddOn.Modes.healingTaken = {
-    defaultFilter = {show = "targets", source = nil, spell = nil, target = nil, overhealing = false, absorbed = false},
-    getSubTitle = function(filter, segment, values, totalValue, maxValue)
+local HealingTakenMode = AddOn.RegisterMode("healingTaken", L.HEALING_TAKEN)
+if HealingDoneMode then
+    ---@class HealingTakenModeFilter
+    HealingTakenMode.DefaultFilter = {
+        show = "targets",
+        source = nil,
+        spell = nil,
+        target = nil,
+        overhealing = false,
+        absorbed = false,
+    }
+
+    ---@param filter HealingTakenModeFilter
+    function HealingTakenMode.SubTitle(filter, segment, values, totalValue, maxValue)
         if not segment then return end
 
         if totalValue > 0 then
             return format("%s (%s)", FormatNumber(totalValue), FormatNumber(totalValue / segment:GetDuration()))
         end
-    end,
-    getTitle = function(filter, segment)
-        wipe(title)
-        title[#title + 1] = HEALING_TAKEN_TITLE
+    end
 
-        ---@type HealingTaken?
-        local healingTaken = segment and segment.healingTaken
-        if not healingTaken then return title[1] end
+    do -- Title
+        ---@type string[]
+        local title = {}
 
-        if filter.show ~= "targets" then title[1] = HEALING_TAKEN_TITLE_MOD end
+        ---@param filter HealingTakenModeFilter
+        function HealingTakenMode.Title(filter, segment)
+            wipe(title)
+            title[#title + 1] = HEALING_TAKEN_TITLE
 
-        local spell = filter.spell
-        local target = filter.target
-        local source = filter.source
+            ---@type HealingTaken?
+            local healingTaken = segment and segment.healingTaken
+            if not healingTaken then return title[1] end
 
-        if target then
-            title[1] = HEALING_TAKEN_TITLE_MOD
-            title[#title + 1] = GetUnitTitleLink("healingTaken", target, healingTaken.targets[target], "target")
+            if filter.show ~= "targets" then title[1] = HEALING_TAKEN_TITLE_MOD end
+
+            local spell = filter.spell
+            local target = filter.target
+            local source = filter.source
+
+            if target then
+                title[1] = HEALING_TAKEN_TITLE_MOD
+                title[#title + 1] = GetUnitTitleLink("healingTaken", target, healingTaken.targets[target], "target")
+            end
+            if spell then
+                title[1] = HEALING_TAKEN_TITLE_MOD
+                title[#title + 1] = GetSpellTitleLink("healingTaken", spell, healingTaken.spells[spell])
+            end
+            if source then
+                title[1] = HEALING_TAKEN_TITLE_MOD
+                title[#title + 1] = GetUnitTitleLink("healingTaken", source, healingTaken.sources[source], "source")
+            end
+
+            return tConcat(title, " - ")
         end
-        if spell then
-            title[1] = HEALING_TAKEN_TITLE_MOD
-            title[#title + 1] = GetSpellTitleLink("healingTaken", spell, healingTaken.spells[spell])
-        end
-        if source then
-            title[1] = HEALING_TAKEN_TITLE_MOD
-            title[#title + 1] = GetUnitTitleLink("healingTaken", source, healingTaken.sources[source], "source")
-        end
+    end
 
-        return tConcat(title, " - ")
-    end,
-    getValues = function(filter, segment, values, texts, colors, icons, iconCoords)
+    ---@param filter HealingTakenModeFilter
+    function HealingTakenMode.Values(filter, segment, values, texts, colors, icons, iconCoords)
         ---@type HealingTaken?
         local healingTaken = segment.healingTaken
-        if not healingTaken then return end
+        if not healingTaken then return 0, false, false end
 
         local show = filter.show
         local target = filter.target
@@ -1362,15 +1396,15 @@ AddOn.Modes.healingTaken = {
 
         if target then
             local targetData = healingTaken.targets[target]
-            if not targetData then return end
+            if not targetData then return 0, false, false end
 
             if spell then
                 local spellData = targetData.spells[spell]
-                if not spellData then return end
+                if not spellData then return 0, false, false end
 
                 if source then
                     local sourceData = spellData.sources[source]
-                    if not sourceData then return end
+                    if not sourceData then return 0, false, false end
 
                     local amount = getAmount(filter, sourceData)
                     if amount > 0 then
@@ -1413,7 +1447,7 @@ AddOn.Modes.healingTaken = {
             elseif source then
                 if show == "targets" then
                     local sourceData = targetData.sources[source]
-                    if not sourceData then return end
+                    if not sourceData then return 0, false, false end
 
                     local amount = getAmount(filter, sourceData)
                     if amount > 0 then
@@ -1432,7 +1466,7 @@ AddOn.Modes.healingTaken = {
                     end
                 elseif show == "sources" then
                     local sourceData = targetData.sources[source]
-                    if not sourceData then return end
+                    if not sourceData then return 0, false, false end
 
                     local amount = getAmount(filter, sourceData)
                     if amount > 0 then
@@ -1488,7 +1522,7 @@ AddOn.Modes.healingTaken = {
                     end
                 elseif show == "spells" then
                     local spellData = healingTaken.spells[spell]
-                    if not spellData then return end
+                    if not spellData then return 0, false, false end
 
                     local amount = getAmount(filter, spellData.sources[source])
                     if amount > 0 then
@@ -1498,10 +1532,10 @@ AddOn.Modes.healingTaken = {
                     end
                 elseif show == "sources" then
                     local spellData = healingTaken.spells[spell]
-                    if not spellData then return end
+                    if not spellData then return 0, false, false end
 
                     local sourceData = spellData.sources[source]
-                    if not sourceData then return end
+                    if not sourceData then return 0, false, false end
 
                     local amount = getAmount(filter, sourceData)
                     if amount > 0 then
@@ -1522,7 +1556,7 @@ AddOn.Modes.healingTaken = {
                     end
                 elseif show == "spells" then
                     local spellData = healingTaken.spells[spell]
-                    if not spellData then return end
+                    if not spellData then return 0, false, false end
 
                     local amount = getAmount(filter, spellData)
                     if amount > 0 then
@@ -1532,7 +1566,7 @@ AddOn.Modes.healingTaken = {
                     end
                 elseif show == "sources" then
                     local spellData = healingTaken.spells[spell]
-                    if not spellData then return end
+                    if not spellData then return 0, false, false end
 
                     for key, data in next, spellData.sources, nil do
                         local amount = getAmount(filter, data)
@@ -1546,7 +1580,7 @@ AddOn.Modes.healingTaken = {
             end
         elseif source then
             local sourceData = healingTaken.sources[source]
-            if not sourceData then return end
+            if not sourceData then return 0, false, false end
 
             if show == "targets" then
                 for key, data in next, healingTaken.targets, nil do
@@ -1605,9 +1639,11 @@ AddOn.Modes.healingTaken = {
             end
         end
 
-        return maxAmount
-    end,
-    menu = function(filter, segment)
+        return maxAmount, true, true
+    end
+
+    ---@param filter HealingTakenModeFilter
+    function HealingTakenMode.Menu(filter, segment)
         ---@type HealingTaken?
         local healingTaken = segment and segment.healingTaken
 
@@ -1768,8 +1804,10 @@ AddOn.Modes.healingTaken = {
                 },
             }
         end
-    end,
-    onClick = function(filter, key, button)
+    end
+
+    ---@param filter HealingTakenModeFilter
+    function HealingTakenMode.OnClick(filter, key, button)
         local show = filter.show
         local target = filter.target
         local spell = filter.spell
@@ -1930,8 +1968,10 @@ AddOn.Modes.healingTaken = {
                 end
             end
         end
-    end,
-    onHyperlink = function(filter, link, button)
+    end
+
+    ---@param filter HealingTakenModeFilter
+    function HealingTakenMode.OnHyperlink(filter, link, button)
         local linkData = ExtractLink(link)
         if linkData then
             linkData = ArrayToPairs(linkData)
@@ -1969,10 +2009,10 @@ AddOn.Modes.healingTaken = {
                 end
             end
         end
-    end,
-    perSecond = true,
-    percent = true,
-    tooltip = function(filter, segment, key, tooltip)
+    end
+
+    ---@param filter HealingTakenModeFilter
+    function HealingTakenMode.Tooltip(filter, segment, key, tooltip)
         ---@type HealingTaken?
         local healingTaken = segment.healingTaken
         if not healingTaken then return end
@@ -2116,7 +2156,7 @@ AddOn.Modes.healingTaken = {
                         tooltip:AddAmount(targetKey, getAmount(filter, spellData and spellData.sources[source]), data)
                     end
                     tooltip:ProcessUnitAmounts(L.TARGET, getAmount(filter, healingTaken.spells[key] and
-                                                                       healingTaken.spells[key].sources[source]))
+                                                                    healingTaken.spells[key].sources[source]))
                 elseif show == "sources" then
                     tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
 
@@ -2125,7 +2165,7 @@ AddOn.Modes.healingTaken = {
                         tooltip:AddAmount(targetKey, getAmount(filter, spellData and spellData.sources[key]), data)
                     end
                     tooltip:ProcessUnitAmounts(L.TARGET, getAmount(filter, healingTaken.spells[spell] and
-                                                                       healingTaken.spells[spell].sources[key]))
+                                                                    healingTaken.spells[spell].sources[key]))
                 end
             else
                 if show == "targets" then
@@ -2166,7 +2206,7 @@ AddOn.Modes.healingTaken = {
                         tooltip:AddAmount(targetKey, getAmount(filter, spellData and spellData.sources[key]), data)
                     end
                     tooltip:ProcessUnitAmounts(L.TARGET, getAmount(filter, healingTaken.spells[spell] and
-                                                                       healingTaken.spells[spell].sources[key]))
+                                                                    healingTaken.spells[spell].sources[key]))
                 end
             end
         elseif source then
@@ -2188,7 +2228,7 @@ AddOn.Modes.healingTaken = {
                     tooltip:AddAmount(targetKey, getAmount(filter, spellData and spellData.sources[source]), data)
                 end
                 tooltip:ProcessUnitAmounts(L.TARGET, getAmount(filter, healingTaken.spells[key] and
-                                                                   healingTaken.spells[key].sources[source]))
+                                                                healingTaken.spells[key].sources[source]))
             elseif show == "sources" then
                 tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
 
@@ -2262,7 +2302,5 @@ AddOn.Modes.healingTaken = {
                 tooltip:ProcessSpellAmounts(amount)
             end
         end
-    end,
-}
-AddOn.ModeNames.healingTaken = L.HEALING_TAKEN
-AddOn.ModeKeys[#AddOn.ModeKeys + 1] = "healingTaken"
+    end
+end

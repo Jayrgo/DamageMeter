@@ -1,0 +1,5 @@
+---@meta
+--
+---@class UnitTable
+---@field name string
+---@field class? ClassFile

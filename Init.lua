@@ -11,13 +11,6 @@ AddOn.TITLE = C_AddOns.GetAddOnMetadata(AddOn.NAME, "Title")
 AddOn.VERSION = C_AddOns.GetAddOnMetadata(AddOn.NAME, "Version")
 AddOn.AUTHOR = C_AddOns.GetAddOnMetadata(AddOn.NAME, "Author")
 
----@type table<string, Mode>
-AddOn.Modes = {}
----@type table<string, string>
-AddOn.ModeNames = {}
----@type string[]
-AddOn.ModeKeys = {}
-
 AddOn.MAX_CACHED_EVENTS_PER_FRAME = 25
 AddOn.MAX_SAVED_SEGMENTS = 100
 

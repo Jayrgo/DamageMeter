@@ -20,6 +20,7 @@ Segments.lua
 
 CombatLog.lua
 
+Modes/Modes.lua
 Modes/Damage.lua
 Modes/Healing.lua
 Modes/Interrupt.lua
