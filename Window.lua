@@ -9,7 +9,6 @@ local min = min
 local next = next
 local setmetatable = setmetatable
 local time = time
-local tRemove = table.remove
 local tSort = table.sort
 local tostring = tostring
 local wipe = wipe
