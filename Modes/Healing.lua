@@ -1064,7 +1064,7 @@ if HealingDoneMode then
                         for targetKey, data in next, spellData.targets, nil do
                             tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                         end
-                        tooltip:ProcessUnitAmounts(L.TARGET, getAmount(filter, spellData))
+                        tooltip:ShowUnitAmounts(L.TARGET, getAmount(filter, spellData))
                     elseif show == "spells" then
                         tooltip:SetSpell(key)
 
@@ -1077,7 +1077,7 @@ if HealingDoneMode then
                         for targetKey, data in next, spellData.targets, nil do
                             tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                         end
-                        tooltip:ProcessUnitAmounts(L.TARGET, getAmount(filter, spellData))
+                        tooltip:ShowUnitAmounts(L.TARGET, getAmount(filter, spellData))
                     elseif show == "targets" then
                         tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
                     end
@@ -1105,7 +1105,7 @@ if HealingDoneMode then
                     for targetKey, data in next, spellData.targets, nil do
                         tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.TARGET, getAmount(filter, spellData))
+                    tooltip:ShowUnitAmounts(L.TARGET, getAmount(filter, spellData))
                 elseif show == "targets" then
                     tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
 
@@ -1137,7 +1137,7 @@ if HealingDoneMode then
                     for targetKey, data in next, sourceData.targets, nil do
                         tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.TARGET, amount)
+                    tooltip:ShowUnitAmounts(L.TARGET, amount)
                 elseif show == "spells" then
                     tooltip:SetSpell(key)
 
@@ -1150,7 +1150,7 @@ if HealingDoneMode then
                     for targetKey, data in next, spellData.targets, nil do
                         tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.TARGET, getAmount(filter, spellData))
+                    tooltip:ShowUnitAmounts(L.TARGET, getAmount(filter, spellData))
                 elseif show == "targets" then
                     tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
 
@@ -1174,7 +1174,7 @@ if HealingDoneMode then
                         local spellData = data.spells[key]
                         tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[target]), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, healingDone.spells[key] and
+                    tooltip:ShowUnitAmounts(L.SOURCE, getAmount(filter, healingDone.spells[key] and
                                                                     healingDone.spells[key].targets[target]))
                 elseif show == "targets" then
                     tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
@@ -1183,7 +1183,7 @@ if HealingDoneMode then
                         local spellData = data.spells[spell]
                         tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[key]), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, healingDone.spells[spell] and
+                    tooltip:ShowUnitAmounts(L.SOURCE, getAmount(filter, healingDone.spells[spell] and
                                                                     healingDone.spells[spell].targets[key]))
                 end
             else
@@ -1199,7 +1199,7 @@ if HealingDoneMode then
                     for targetKey, data in next, spellData.targets, nil do
                         tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.TARGET, getAmount(filter, spellData))
+                    tooltip:ShowUnitAmounts(L.TARGET, getAmount(filter, spellData))
                 elseif show == "spells" then
                     tooltip:SetSpell(key)
 
@@ -1211,12 +1211,12 @@ if HealingDoneMode then
                     for sourceKey, data in next, healingDone.sources, nil do
                         tooltip:AddAmount(sourceKey, getAmount(filter, data.spells[key]), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.SOURCE, amount)
+                    tooltip:ShowUnitAmounts(L.SOURCE, amount)
 
                     for targetKey, data in next, spellData.targets, nil do
                         tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.TARGET, amount)
+                    tooltip:ShowUnitAmounts(L.TARGET, amount)
                 elseif show == "targets" then
                     tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
 
@@ -1224,7 +1224,7 @@ if HealingDoneMode then
                         local spellData = data.spells[spell]
                         tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[key]), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, healingDone.spells[spell] and
+                    tooltip:ShowUnitAmounts(L.SOURCE, getAmount(filter, healingDone.spells[spell] and
                                                                     healingDone.spells[spell].targets[key]))
                 end
             end
@@ -1246,7 +1246,7 @@ if HealingDoneMode then
                     local spellData = data.spells[key]
                     tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[target]), data)
                 end
-                tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, healingDone.spells[key] and
+                tooltip:ShowUnitAmounts(L.SOURCE, getAmount(filter, healingDone.spells[key] and
                                                                 healingDone.spells[key].targets[target]))
             elseif show == "targets" then
                 tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
@@ -1259,7 +1259,7 @@ if HealingDoneMode then
                 for sourceKey, data in next, healingDone.sources, nil do
                     tooltip:AddAmount(sourceKey, getAmount(filter, data.targets[key]), data)
                 end
-                tooltip:ProcessUnitAmounts(L.SOURCE, amount)
+                tooltip:ShowUnitAmounts(L.SOURCE, amount)
 
                 for spellKey, data in next, healingDone.spells, nil do
                     tooltip:AddAmount(spellKey, getAmount(filter, data.targets[key]), data)
@@ -1283,7 +1283,7 @@ if HealingDoneMode then
                 for targetKey, data in next, sourceData.targets, nil do
                     tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                 end
-                tooltip:ProcessUnitAmounts(L.TARGET, amount)
+                tooltip:ShowUnitAmounts(L.TARGET, amount)
             elseif show == "spells" then
                 tooltip:SetSpell(key)
 
@@ -1295,12 +1295,12 @@ if HealingDoneMode then
                 for sourceKey, data in next, healingDone.sources, nil do
                     tooltip:AddAmount(sourceKey, getAmount(filter, data.spells[key]), data)
                 end
-                tooltip:ProcessUnitAmounts(L.SOURCE, amount)
+                tooltip:ShowUnitAmounts(L.SOURCE, amount)
 
                 for targetKey, data in next, spellData.targets, nil do
                     tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                 end
-                tooltip:ProcessUnitAmounts(L.TARGET, amount)
+                tooltip:ShowUnitAmounts(L.TARGET, amount)
 
             elseif show == "targets" then
                 tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
@@ -1313,7 +1313,7 @@ if HealingDoneMode then
                 for sourceKey, data in next, healingDone.sources, nil do
                     tooltip:AddAmount(sourceKey, getAmount(filter, data.targets[key]), data)
                 end
-                tooltip:ProcessUnitAmounts(L.SOURCE, amount)
+                tooltip:ShowUnitAmounts(L.SOURCE, amount)
 
                 for spellKey, data in next, healingDone.spells, nil do
                     tooltip:AddAmount(spellKey, getAmount(filter, data.targets[key]), data)
@@ -2045,7 +2045,7 @@ if HealingDoneMode then
                         for sourceKey, data in next, spellData.sources, nil do
                             tooltip:AddAmount(sourceKey, getAmount(filter, data), data)
                         end
-                        tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, spellData))
+                        tooltip:ShowUnitAmounts(L.SOURCE, getAmount(filter, spellData))
                     elseif show == "spells" then
                         tooltip:SetSpell(key)
 
@@ -2058,7 +2058,7 @@ if HealingDoneMode then
                         for sourceKey, data in next, spellData.sources, nil do
                             tooltip:AddAmount(sourceKey, getAmount(filter, data), data)
                         end
-                        tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, spellData))
+                        tooltip:ShowUnitAmounts(L.SOURCE, getAmount(filter, spellData))
                     elseif show == "sources" then
                         tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
                     end
@@ -2086,7 +2086,7 @@ if HealingDoneMode then
                     for sourceKey, data in next, spellData.sources, nil do
                         tooltip:AddAmount(sourceKey, getAmount(filter, data), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, spellData))
+                    tooltip:ShowUnitAmounts(L.SOURCE, getAmount(filter, spellData))
                 elseif show == "sources" then
                     tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
 
@@ -2118,7 +2118,7 @@ if HealingDoneMode then
                     for sourceKey, data in next, targetData.sources, nil do
                         tooltip:AddAmount(sourceKey, getAmount(filter, data), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.SOURCE, amount)
+                    tooltip:ShowUnitAmounts(L.SOURCE, amount)
                 elseif show == "spells" then
                     tooltip:SetSpell(key)
 
@@ -2131,7 +2131,7 @@ if HealingDoneMode then
                     for sourceKey, data in next, spellData.sources, nil do
                         tooltip:AddAmount(sourceKey, getAmount(filter, data), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, spellData))
+                    tooltip:ShowUnitAmounts(L.SOURCE, getAmount(filter, spellData))
                 elseif show == "sources" then
                     tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
 
@@ -2155,7 +2155,7 @@ if HealingDoneMode then
                         local spellData = data.spells[key]
                         tooltip:AddAmount(targetKey, getAmount(filter, spellData and spellData.sources[source]), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.TARGET, getAmount(filter, healingTaken.spells[key] and
+                    tooltip:ShowUnitAmounts(L.TARGET, getAmount(filter, healingTaken.spells[key] and
                                                                     healingTaken.spells[key].sources[source]))
                 elseif show == "sources" then
                     tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
@@ -2164,7 +2164,7 @@ if HealingDoneMode then
                         local spellData = data.spells[spell]
                         tooltip:AddAmount(targetKey, getAmount(filter, spellData and spellData.sources[key]), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.TARGET, getAmount(filter, healingTaken.spells[spell] and
+                    tooltip:ShowUnitAmounts(L.TARGET, getAmount(filter, healingTaken.spells[spell] and
                                                                     healingTaken.spells[spell].sources[key]))
                 end
             else
@@ -2180,7 +2180,7 @@ if HealingDoneMode then
                     for sourceKey, data in next, spellData.sources, nil do
                         tooltip:AddAmount(sourceKey, getAmount(filter, data), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, spellData))
+                    tooltip:ShowUnitAmounts(L.SOURCE, getAmount(filter, spellData))
                 elseif show == "spells" then
                     tooltip:SetSpell(key)
 
@@ -2192,12 +2192,12 @@ if HealingDoneMode then
                     for targetKey, data in next, healingTaken.targets, nil do
                         tooltip:AddAmount(targetKey, getAmount(filter, data.spells[key]), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.TARGET, amount)
+                    tooltip:ShowUnitAmounts(L.TARGET, amount)
 
                     for sourceKey, data in next, spellData.sources, nil do
                         tooltip:AddAmount(sourceKey, getAmount(filter, data), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.SOURCE, amount)
+                    tooltip:ShowUnitAmounts(L.SOURCE, amount)
                 elseif show == "sources" then
                     tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
 
@@ -2205,7 +2205,7 @@ if HealingDoneMode then
                         local spellData = data.spells[spell]
                         tooltip:AddAmount(targetKey, getAmount(filter, spellData and spellData.sources[key]), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.TARGET, getAmount(filter, healingTaken.spells[spell] and
+                    tooltip:ShowUnitAmounts(L.TARGET, getAmount(filter, healingTaken.spells[spell] and
                                                                     healingTaken.spells[spell].sources[key]))
                 end
             end
@@ -2227,7 +2227,7 @@ if HealingDoneMode then
                     local spellData = data.spells[key]
                     tooltip:AddAmount(targetKey, getAmount(filter, spellData and spellData.sources[source]), data)
                 end
-                tooltip:ProcessUnitAmounts(L.TARGET, getAmount(filter, healingTaken.spells[key] and
+                tooltip:ShowUnitAmounts(L.TARGET, getAmount(filter, healingTaken.spells[key] and
                                                                 healingTaken.spells[key].sources[source]))
             elseif show == "sources" then
                 tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
@@ -2240,7 +2240,7 @@ if HealingDoneMode then
                 for targetKey, data in next, healingTaken.targets, nil do
                     tooltip:AddAmount(targetKey, getAmount(filter, data.sources[key]), data)
                 end
-                tooltip:ProcessUnitAmounts(L.TARGET, amount)
+                tooltip:ShowUnitAmounts(L.TARGET, amount)
 
                 for spellKey, data in next, healingTaken.spells, nil do
                     tooltip:AddAmount(spellKey, getAmount(filter, data.sources[key]), data)
@@ -2264,7 +2264,7 @@ if HealingDoneMode then
                 for sourceKey, data in next, targetData.sources, nil do
                     tooltip:AddAmount(sourceKey, getAmount(filter, data), data)
                 end
-                tooltip:ProcessUnitAmounts(L.SOURCE, amount)
+                tooltip:ShowUnitAmounts(L.SOURCE, amount)
             elseif show == "spells" then
                 tooltip:SetSpell(key)
 
@@ -2276,12 +2276,12 @@ if HealingDoneMode then
                 for targetKey, data in next, healingTaken.targets, nil do
                     tooltip:AddAmount(targetKey, getAmount(filter, data.spells[key]), data)
                 end
-                tooltip:ProcessUnitAmounts(L.TARGET, amount)
+                tooltip:ShowUnitAmounts(L.TARGET, amount)
 
                 for sourceKey, data in next, spellData.sources, nil do
                     tooltip:AddAmount(sourceKey, getAmount(filter, data), data)
                 end
-                tooltip:ProcessUnitAmounts(L.SOURCE, amount)
+                tooltip:ShowUnitAmounts(L.SOURCE, amount)
 
             elseif show == "sources" then
                 tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
@@ -2294,7 +2294,7 @@ if HealingDoneMode then
                 for targetKey, data in next, healingTaken.targets, nil do
                     tooltip:AddAmount(targetKey, getAmount(filter, data.sources[key]), data)
                 end
-                tooltip:ProcessUnitAmounts(L.TARGET, amount)
+                tooltip:ShowUnitAmounts(L.TARGET, amount)
 
                 for spellKey, data in next, healingTaken.spells, nil do
                     tooltip:AddAmount(spellKey, getAmount(filter, data.sources[key]), data)

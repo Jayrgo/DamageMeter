@@ -226,7 +226,7 @@ do
 
     ---@param title string
     ---@param totalAmount number
-    function Tooltip:ProcessUnitAmounts(title, totalAmount)
+    function Tooltip:ShowUnitAmounts(title, totalAmount)
         tSort(keys, comp)
         self:AddBlankLines(1)
         self:AddDoubleLine(title, L.AMOUNT)

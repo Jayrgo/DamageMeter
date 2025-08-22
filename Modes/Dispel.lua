@@ -1000,7 +1000,7 @@ if DispelMode then
                         for targetKey, data in next, spellData.targets, nil do
                             tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                         end
-                        tooltip:ProcessUnitAmounts(L.TARGET, getAmount(filter, spellData))
+                        tooltip:ShowUnitAmounts(L.TARGET, getAmount(filter, spellData))
                     elseif show == "spells" then
                         tooltip:SetSpell(key)
 
@@ -1013,7 +1013,7 @@ if DispelMode then
                         for targetKey, data in next, spellData.targets, nil do
                             tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                         end
-                        tooltip:ProcessUnitAmounts(L.TARGET, getAmount(filter, spellData))
+                        tooltip:ShowUnitAmounts(L.TARGET, getAmount(filter, spellData))
                     elseif show == "targets" then
                         tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
                     end
@@ -1041,7 +1041,7 @@ if DispelMode then
                     for targetKey, data in next, spellData.targets, nil do
                         tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.TARGET, getAmount(filter, spellData))
+                    tooltip:ShowUnitAmounts(L.TARGET, getAmount(filter, spellData))
                 elseif show == "targets" then
                     tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
 
@@ -1073,7 +1073,7 @@ if DispelMode then
                     for targetKey, data in next, sourceData.targets, nil do
                         tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.TARGET, amount)
+                    tooltip:ShowUnitAmounts(L.TARGET, amount)
                 elseif show == "spells" then
                     tooltip:SetSpell(key)
 
@@ -1086,7 +1086,7 @@ if DispelMode then
                     for targetKey, data in next, spellData.targets, nil do
                         tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.TARGET, getAmount(filter, spellData))
+                    tooltip:ShowUnitAmounts(L.TARGET, getAmount(filter, spellData))
                 elseif show == "targets" then
                     tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
 
@@ -1110,7 +1110,7 @@ if DispelMode then
                         local spellData = data.spells[key]
                         tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[target]), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, dispel.spells[key] and
+                    tooltip:ShowUnitAmounts(L.SOURCE, getAmount(filter, dispel.spells[key] and
                                                                     dispel.spells[key].targets[target]))
                 elseif show == "targets" then
                     tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
@@ -1119,7 +1119,7 @@ if DispelMode then
                         local spellData = data.spells[spell]
                         tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[key]), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, dispel.spells[spell] and
+                    tooltip:ShowUnitAmounts(L.SOURCE, getAmount(filter, dispel.spells[spell] and
                                                                     dispel.spells[spell].targets[key]))
                 end
             else
@@ -1135,7 +1135,7 @@ if DispelMode then
                     for targetKey, data in next, spellData.targets, nil do
                         tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.TARGET, getAmount(filter, spellData))
+                    tooltip:ShowUnitAmounts(L.TARGET, getAmount(filter, spellData))
                 elseif show == "spells" then
                     tooltip:SetSpell(key)
 
@@ -1147,12 +1147,12 @@ if DispelMode then
                     for sourceKey, data in next, dispel.sources, nil do
                         tooltip:AddAmount(sourceKey, getAmount(filter, data.spells[key]), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.SOURCE, amount)
+                    tooltip:ShowUnitAmounts(L.SOURCE, amount)
 
                     for targetKey, data in next, spellData.targets, nil do
                         tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.TARGET, amount)
+                    tooltip:ShowUnitAmounts(L.TARGET, amount)
                 elseif show == "targets" then
                     tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
 
@@ -1160,7 +1160,7 @@ if DispelMode then
                         local spellData = data.spells[spell]
                         tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[key]), data)
                     end
-                    tooltip:ProcessUnitAmounts(L.SOURCE, getAmount(filter, dispel.spells[spell] and
+                    tooltip:ShowUnitAmounts(L.SOURCE, getAmount(filter, dispel.spells[spell] and
                                                                     dispel.spells[spell].targets[key]))
                 end
             end
@@ -1182,7 +1182,7 @@ if DispelMode then
                     local spellData = data.spells[key]
                     tooltip:AddAmount(sourceKey, getAmount(filter, spellData and spellData.targets[target]), data)
                 end
-                tooltip:ProcessUnitAmounts(L.SOURCE,
+                tooltip:ShowUnitAmounts(L.SOURCE,
                                         getAmount(filter, dispel.spells[key] and dispel.spells[key].targets[target]))
             elseif show == "targets" then
                 tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
@@ -1195,7 +1195,7 @@ if DispelMode then
                 for sourceKey, data in next, dispel.sources, nil do
                     tooltip:AddAmount(sourceKey, getAmount(filter, data.targets[key]), data)
                 end
-                tooltip:ProcessUnitAmounts(L.SOURCE, amount)
+                tooltip:ShowUnitAmounts(L.SOURCE, amount)
 
                 for spellKey, data in next, dispel.spells, nil do
                     tooltip:AddAmount(spellKey, getAmount(filter, data.targets[key]), data)
@@ -1219,7 +1219,7 @@ if DispelMode then
                 for targetKey, data in next, sourceData.targets, nil do
                     tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                 end
-                tooltip:ProcessUnitAmounts(L.TARGET, amount)
+                tooltip:ShowUnitAmounts(L.TARGET, amount)
             elseif show == "spells" then
                 tooltip:SetSpell(key)
 
@@ -1231,12 +1231,12 @@ if DispelMode then
                 for sourceKey, data in next, dispel.sources, nil do
                     tooltip:AddAmount(sourceKey, getAmount(filter, data.spells[key]), data)
                 end
-                tooltip:ProcessUnitAmounts(L.SOURCE, amount)
+                tooltip:ShowUnitAmounts(L.SOURCE, amount)
 
                 for targetKey, data in next, spellData.targets, nil do
                     tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                 end
-                tooltip:ProcessUnitAmounts(L.TARGET, amount)
+                tooltip:ShowUnitAmounts(L.TARGET, amount)
 
             elseif show == "targets" then
                 tooltip:SetPlayerOrName(key, segment.roster and segment.roster[key])
@@ -1249,7 +1249,7 @@ if DispelMode then
                 for sourceKey, data in next, dispel.sources, nil do
                     tooltip:AddAmount(sourceKey, getAmount(filter, data.targets[key]), data)
                 end
-                tooltip:ProcessUnitAmounts(L.SOURCE, amount)
+                tooltip:ShowUnitAmounts(L.SOURCE, amount)
 
                 for spellKey, data in next, dispel.spells, nil do
                     tooltip:AddAmount(spellKey, getAmount(filter, data.targets[key]), data)
