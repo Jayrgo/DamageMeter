@@ -1713,7 +1713,32 @@ do -- DamageDone
 
                         local spellData = sourceData.spells[key]
                         if not spellData then return end
-                        
+
+                        tooltip:AddBlankLines(1)
+
+                        local numHits = (spellData.numHits or 0) + (spellData.petNumHits or 0)
+                        if numHits > 0 then
+                            tooltip:AddColoredDoubleLine(L.HITS, FormatNumber(numHits), HIGHLIGHT_FONT_COLOR)
+
+                            local numCrits = (spellData.numCrits or 0) + (spellData.petNumCrits or 0)
+                            if numCrits > 0 then
+                                tooltip:AddColoredDoubleLine(L.CRITICAL, format("%s (%s)", FormatNumber(numCrits),
+                                                                                FormatPercentage(numCrits / numHits)),
+                                                             HIGHLIGHT_FONT_COLOR)
+                            end
+                        end
+
+                        local minHit = (spellData.minHit and (spellData.minHit + (spellData.petMinHit or 0)) or
+                                           spellData.petMinHit)
+                        if minHit and minHit > 0 then
+                            tooltip:AddColoredDoubleLine(L.MIN, FormatNumber(minHit), HIGHLIGHT_FONT_COLOR)
+                        end
+
+                        local maxHit = (spellData.maxHit or 0) + (spellData.petMaxHit or 0)
+                        if maxHit > 0 then
+                            tooltip:AddColoredDoubleLine(L.MAX, FormatNumber(maxHit), HIGHLIGHT_FONT_COLOR)
+                        end
+
                         for targetKey, data in next, spellData.targets, nil do
                             tooltip:AddAmount(targetKey, getAmount(filter, data), data)
                         end
