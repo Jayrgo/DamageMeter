@@ -1092,7 +1092,7 @@ if HealingDoneMode then
                     for spellKey, data in next, sourceData.spells, nil do
                         tooltip:AddAmount(spellKey, getAmount(filter, data.targets[target]), data)
                     end
-                    tooltip:ProcessSpellAmounts(getAmount(filter, sourceData.targets[target]))
+                    tooltip:ShowSpellAmounts(getAmount(filter, sourceData.targets[target]))
                 elseif show == "spells" then
                     tooltip:SetSpell(key)
 
@@ -1118,7 +1118,7 @@ if HealingDoneMode then
                     for spellKey, data in next, sourceData.spells, nil do
                         tooltip:AddAmount(spellKey, getAmount(filter, data.targets[key]), data)
                     end
-                    tooltip:ProcessSpellAmounts(getAmount(filter, targetData))
+                    tooltip:ShowSpellAmounts(getAmount(filter, targetData))
                 end
             else
                 if show == "sources" then
@@ -1132,7 +1132,7 @@ if HealingDoneMode then
                     for spellKey, data in next, sourceData.spells, nil do
                         tooltip:AddAmount(spellKey, getAmount(filter, data), data)
                     end
-                    tooltip:ProcessSpellAmounts(amount)
+                    tooltip:ShowSpellAmounts(amount)
 
                     for targetKey, data in next, sourceData.targets, nil do
                         tooltip:AddAmount(targetKey, getAmount(filter, data), data)
@@ -1160,7 +1160,7 @@ if HealingDoneMode then
                     for spellKey, data in next, sourceData.spells, nil do
                         tooltip:AddAmount(spellKey, getAmount(filter, data.targets[key]), data)
                     end
-                    tooltip:ProcessSpellAmounts(getAmount(filter, sourceData.targets[key]))
+                    tooltip:ShowSpellAmounts(getAmount(filter, sourceData.targets[key]))
                 end
             end
         elseif spell then
@@ -1238,7 +1238,7 @@ if HealingDoneMode then
                 for spellKey, data in next, sourceData.spells, nil do
                     tooltip:AddAmount(spellKey, getAmount(filter, data.targets[target]), data)
                 end
-                tooltip:ProcessSpellAmounts(getAmount(filter, sourceData.targets[target]))
+                tooltip:ShowSpellAmounts(getAmount(filter, sourceData.targets[target]))
             elseif show == "spells" then
                 tooltip:SetSpell(key)
 
@@ -1264,7 +1264,7 @@ if HealingDoneMode then
                 for spellKey, data in next, healingDone.spells, nil do
                     tooltip:AddAmount(spellKey, getAmount(filter, data.targets[key]), data)
                 end
-                tooltip:ProcessSpellAmounts(amount)
+                tooltip:ShowSpellAmounts(amount)
             end
         else
             if show == "sources" then
@@ -1278,7 +1278,7 @@ if HealingDoneMode then
                 for spellKey, data in next, sourceData.spells, nil do
                     tooltip:AddAmount(spellKey, getAmount(filter, data), data)
                 end
-                tooltip:ProcessSpellAmounts(amount)
+                tooltip:ShowSpellAmounts(amount)
 
                 for targetKey, data in next, sourceData.targets, nil do
                     tooltip:AddAmount(targetKey, getAmount(filter, data), data)
@@ -1318,7 +1318,7 @@ if HealingDoneMode then
                 for spellKey, data in next, healingDone.spells, nil do
                     tooltip:AddAmount(spellKey, getAmount(filter, data.targets[key]), data)
                 end
-                tooltip:ProcessSpellAmounts(amount)
+                tooltip:ShowSpellAmounts(amount)
             end
         end
     end
@@ -2073,7 +2073,7 @@ if HealingDoneMode then
                     for spellKey, data in next, targetData.spells, nil do
                         tooltip:AddAmount(spellKey, getAmount(filter, data.sources[source]), data)
                     end
-                    tooltip:ProcessSpellAmounts(getAmount(filter, targetData.sources[source]))
+                    tooltip:ShowSpellAmounts(getAmount(filter, targetData.sources[source]))
                 elseif show == "spells" then
                     tooltip:SetSpell(key)
 
@@ -2099,7 +2099,7 @@ if HealingDoneMode then
                     for spellKey, data in next, targetData.spells, nil do
                         tooltip:AddAmount(spellKey, getAmount(filter, data.sources[key]), data)
                     end
-                    tooltip:ProcessSpellAmounts(getAmount(filter, sourceData))
+                    tooltip:ShowSpellAmounts(getAmount(filter, sourceData))
                 end
             else
                 if show == "targets" then
@@ -2113,7 +2113,7 @@ if HealingDoneMode then
                     for spellKey, data in next, targetData.spells, nil do
                         tooltip:AddAmount(spellKey, getAmount(filter, data), data)
                     end
-                    tooltip:ProcessSpellAmounts(amount)
+                    tooltip:ShowSpellAmounts(amount)
 
                     for sourceKey, data in next, targetData.sources, nil do
                         tooltip:AddAmount(sourceKey, getAmount(filter, data), data)
@@ -2141,7 +2141,7 @@ if HealingDoneMode then
                     for spellKey, data in next, targetData.spells, nil do
                         tooltip:AddAmount(spellKey, getAmount(filter, data.sources[key]), data)
                     end
-                    tooltip:ProcessSpellAmounts(getAmount(filter, targetData.sources[key]))
+                    tooltip:ShowSpellAmounts(getAmount(filter, targetData.sources[key]))
                 end
             end
         elseif spell then
@@ -2219,7 +2219,7 @@ if HealingDoneMode then
                 for spellKey, data in next, targetData.spells, nil do
                     tooltip:AddAmount(spellKey, getAmount(filter, data.sources[source]), data)
                 end
-                tooltip:ProcessSpellAmounts(getAmount(filter, targetData.sources[source]))
+                tooltip:ShowSpellAmounts(getAmount(filter, targetData.sources[source]))
             elseif show == "spells" then
                 tooltip:SetSpell(key)
 
@@ -2245,7 +2245,7 @@ if HealingDoneMode then
                 for spellKey, data in next, healingTaken.spells, nil do
                     tooltip:AddAmount(spellKey, getAmount(filter, data.sources[key]), data)
                 end
-                tooltip:ProcessSpellAmounts(amount)
+                tooltip:ShowSpellAmounts(amount)
             end
         else
             if show == "targets" then
@@ -2259,7 +2259,7 @@ if HealingDoneMode then
                 for spellKey, data in next, targetData.spells, nil do
                     tooltip:AddAmount(spellKey, getAmount(filter, data), data)
                 end
-                tooltip:ProcessSpellAmounts(amount)
+                tooltip:ShowSpellAmounts(amount)
 
                 for sourceKey, data in next, targetData.sources, nil do
                     tooltip:AddAmount(sourceKey, getAmount(filter, data), data)
@@ -2299,7 +2299,7 @@ if HealingDoneMode then
                 for spellKey, data in next, healingTaken.spells, nil do
                     tooltip:AddAmount(spellKey, getAmount(filter, data.sources[key]), data)
                 end
-                tooltip:ProcessSpellAmounts(amount)
+                tooltip:ShowSpellAmounts(amount)
             end
         end
     end

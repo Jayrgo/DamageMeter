@@ -1028,7 +1028,7 @@ if DispelMode then
                     for spellKey, data in next, sourceData.spells, nil do
                         tooltip:AddAmount(spellKey, getAmount(filter, data.targets[target]), data)
                     end
-                    tooltip:ProcessSpellAmounts(getAmount(filter, sourceData.targets[target]))
+                    tooltip:ShowSpellAmounts(getAmount(filter, sourceData.targets[target]))
                 elseif show == "spells" then
                     tooltip:SetSpell(key)
 
@@ -1054,7 +1054,7 @@ if DispelMode then
                     for spellKey, data in next, sourceData.spells, nil do
                         tooltip:AddAmount(spellKey, getAmount(filter, data.targets[key]), data)
                     end
-                    tooltip:ProcessSpellAmounts(getAmount(filter, targetData))
+                    tooltip:ShowSpellAmounts(getAmount(filter, targetData))
                 end
             else
                 if show == "sources" then
@@ -1068,7 +1068,7 @@ if DispelMode then
                     for spellKey, data in next, sourceData.spells, nil do
                         tooltip:AddAmount(spellKey, getAmount(filter, data), data)
                     end
-                    tooltip:ProcessSpellAmounts(amount)
+                    tooltip:ShowSpellAmounts(amount)
 
                     for targetKey, data in next, sourceData.targets, nil do
                         tooltip:AddAmount(targetKey, getAmount(filter, data), data)
@@ -1096,7 +1096,7 @@ if DispelMode then
                     for spellKey, data in next, sourceData.spells, nil do
                         tooltip:AddAmount(spellKey, getAmount(filter, data.targets[key]), data)
                     end
-                    tooltip:ProcessSpellAmounts(getAmount(filter, sourceData.targets[key]))
+                    tooltip:ShowSpellAmounts(getAmount(filter, sourceData.targets[key]))
                 end
             end
         elseif spell then
@@ -1174,7 +1174,7 @@ if DispelMode then
                 for spellKey, data in next, sourceData.spells, nil do
                     tooltip:AddAmount(spellKey, getAmount(filter, data.targets[target]), data)
                 end
-                tooltip:ProcessSpellAmounts(getAmount(filter, sourceData.targets[target]))
+                tooltip:ShowSpellAmounts(getAmount(filter, sourceData.targets[target]))
             elseif show == "spells" then
                 tooltip:SetSpell(key)
 
@@ -1200,7 +1200,7 @@ if DispelMode then
                 for spellKey, data in next, dispel.spells, nil do
                     tooltip:AddAmount(spellKey, getAmount(filter, data.targets[key]), data)
                 end
-                tooltip:ProcessSpellAmounts(amount)
+                tooltip:ShowSpellAmounts(amount)
             end
         else
             if show == "sources" then
@@ -1214,7 +1214,7 @@ if DispelMode then
                 for spellKey, data in next, sourceData.spells, nil do
                     tooltip:AddAmount(spellKey, getAmount(filter, data), data)
                 end
-                tooltip:ProcessSpellAmounts(amount)
+                tooltip:ShowSpellAmounts(amount)
 
                 for targetKey, data in next, sourceData.targets, nil do
                     tooltip:AddAmount(targetKey, getAmount(filter, data), data)
@@ -1254,7 +1254,7 @@ if DispelMode then
                 for spellKey, data in next, dispel.spells, nil do
                     tooltip:AddAmount(spellKey, getAmount(filter, data.targets[key]), data)
                 end
-                tooltip:ProcessSpellAmounts(amount)
+                tooltip:ShowSpellAmounts(amount)
             end
         end
     end

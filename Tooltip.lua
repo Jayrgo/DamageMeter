@@ -210,7 +210,7 @@ do
     function Tooltip:EnumerateData() return iter, nil, 0 end
 
     ---@param totalAmount number
-    function Tooltip:ProcessSpellAmounts(totalAmount)
+    function Tooltip:ShowSpellAmounts(totalAmount)
         tSort(keys, comp)
         self:AddBlankLines(1)
         self:AddDoubleLine(L.ABILITY, L.AMOUNT)
