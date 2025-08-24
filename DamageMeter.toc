@@ -12,7 +12,6 @@ Localization\enUS.lua
 Localization\deDE.lua
 
 Tooltip.lua
-DropDownMenu.lua
 
 PlayerInfos.lua
 

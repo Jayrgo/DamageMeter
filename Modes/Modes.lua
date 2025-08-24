@@ -32,7 +32,7 @@ function AddOn.RegisterMode(key, name)
     ---@class Mode
     ---@field DefaultFilter? table
     ---@field SubTitle? fun(filter: table, segment?: Segment, values: table<any, number>, totalValue: number, maxValue: number):string?
-    ---@field Menu? fun(filter: table, segment?: Segment):fun(value: any, arg: any):MenuInfo[]
+    ---@field Menu? fun(element:ElementMenuDescriptionProxy, filter: table, segment?: Segment)
     ---@field OnClick? fun(filter: table, key: any, button: string)
     ---@field OnHyperlink? fun(filter: table, link: string, button: string)
     ---@field Tooltip? fun(filter: table, segment: Segment, key: any, tooltip:Tooltip)
@@ -51,9 +51,7 @@ function AddOn.RegisterMode(key, name)
         ---@return number maxAmount
         ---@return boolean perSecond
         ---@return boolean percent
-        Values = function(filter, segment, values, texts, colors, icons, iconCoords)
-            return 0, false, false
-        end,
+        Values = function(filter, segment, values, texts, colors, icons, iconCoords) return 0, false, false end,
     }
 
     modes[key] = mode

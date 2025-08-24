@@ -19,14 +19,13 @@ local CreateColor = CreateColor
 local CreateFrame = CreateFrame
 local DeleteAllSegments = AddOn.DeleteAllSegments
 local DeleteSegment = AddOn.DeleteSegment
-local DropDownMenu = AddOn.DropDownMenu
 local FormatNumber = AddOn.FormatNumber
 local FormatPercentage = AddOn.FormatPercentage
 local FormatSeconds = AddOn.FormatSeconds
 local FormatTimestamp = AddOn.FormatTimestamp
+local GetScreenHeight = GetScreenHeight
 local GetScreenWidth = GetScreenWidth
 local IsModifierKeyDown = IsModifierKeyDown
-local Mixin = AddOn.Mixin
 local Mode = AddOn.Mode
 local ModeKeys = AddOn.ModeKeys
 local ModeName = AddOn.ModeName
@@ -41,30 +40,6 @@ local Tooltip = AddOn.Tooltip
 ---@field EnumerateActive fun(window: WindowPool):WindowPoolPairs, Window
 ---@field GetNumActive fun(window: WindowPool):number
 local windowPool
-
---[[ ---@param self WindowSegmentButton
----@param motion boolean
-local function segmentButton_OnEnter(self, motion)
-    Tooltip:SetOwner(self, "ANCHOR_RIGHT")
-    Tooltip:SetTitle(L.SEGMENTS)
-    Tooltip:Show()
-end ]]
-
---[[ ---@param self WindowModeButton
----@param motion boolean
-local function modeButton_OnEnter(self, motion)
-    Tooltip:SetOwner(self, "ANCHOR_RIGHT")
-    Tooltip:SetTitle(L.MODE)
-    Tooltip:Show()
-end ]]
-
----@param self WindowSettingsButton
----@param motion boolean
-local function settingsButton_OnEnter(self, motion)
-    Tooltip:SetOwner(self, "ANCHOR_RIGHT")
-    Tooltip:SetText(L.SETTINGS)
-    Tooltip:Show()
-end
 
 local function hideTooltip() Tooltip:Hide() end
 
@@ -82,61 +57,111 @@ local function scrollFrame_OnUpdate(self, elapsed)
     self:GetVerticalScrollRange())))
 end
 
----@param isChecked boolean
----@param value Segment
----@param arg Window
-local function setSegment(isChecked, value, arg) arg:SetSegment(value) end
+---@param owner Button
+---@param rootDescription RootMenuDescriptionProxy
+---@param window Window
+local function openSegmentsMenu(owner, rootDescription, window)
+    rootDescription:SetScrollMode(GetScreenHeight() * 0.5)
 
----@param self DropDownListButton
----@param value Segment
----@param arg Window
-local function segmentOnEnter(self, value, arg)
-    if value then
-        Tooltip:SetOwner(self, "ANCHOR_RIGHT")
-        Tooltip:SetTitle(value:GetName())
-        Tooltip:AddLine(value:GetMapName())
-        Tooltip:AddBlankLines(1)
-        Tooltip:AddDoubleLine(L.START, FormatTimestamp(value:GetStartTimestamp() or time()))
-        local endTimestamp = value:GetEndTimestamp()
-        if endTimestamp then Tooltip:AddDoubleLine(L.END, FormatTimestamp(endTimestamp)) end
-        Tooltip:AddDoubleLine(L.DURATION, FormatSeconds(value:GetDuration()))
-        Tooltip:Show()
-    else
-        hideTooltip()
+    rootDescription:CreateTitle(format(L.SEGMENTS_DROPDOWN_TITLE, #AddOn.Segments))
+
+    ---@param data Segment
+    ---@return boolean
+    local function isSelected(data) return window:GetSegment() == data end
+
+    ---@param data Segment
+    ---@param menuInputData any
+    ---@param menu any
+    local function setSelected(data, menuInputData, menu) window:SetSegment(data) end
+
+    ---@param frame Frame
+    ---@param elementDescription ElementMenuDescriptionProxy
+    local function onEnter(frame, elementDescription)
+        ---@type Segment?
+        local segment = elementDescription:GetData()
+
+        if segment then
+            Tooltip:SetOwner(frame, "ANCHOR_RIGHT")
+            Tooltip:SetTitle(segment:GetName())
+            Tooltip:AddLine(segment:GetMapName())
+            Tooltip:AddBlankLines(1)
+            Tooltip:AddDoubleLine(L.START, FormatTimestamp(segment:GetStartTimestamp() or time()))
+            local endTimestamp = segment:GetEndTimestamp()
+            if endTimestamp then Tooltip:AddDoubleLine(L.END, FormatTimestamp(endTimestamp)) end
+            Tooltip:AddDoubleLine(L.DURATION, FormatSeconds(segment:GetDuration()))
+            Tooltip:Show()
+        else
+            Tooltip:Hide()
+        end
+    end
+
+    ---@param frame Frame
+    ---@param elementDescription ElementMenuDescriptionProxy
+    local function onLeave(frame, elementDescription) Tooltip:Hide() end
+
+    local current = AddOn.GetCombatSegment()
+
+    local radio = rootDescription:CreateRadio(L.CURRENT, isSelected, setSelected, current)
+    radio:SetOnEnter(function(frame, elementDescription)
+        ---@type Segment?
+        local segment = elementDescription:GetData()
+
+        if segment ~= nil then
+            Tooltip:SetOwner(frame, "ANCHOR_RIGHT")
+            Tooltip:SetTitle(segment.name or L.CURRENT)
+            Tooltip:AddLine(segment:GetMapName())
+            local startTimestamp = segment:GetStartTimestamp()
+            if startTimestamp then
+                Tooltip:AddDoubleLine(L.START, FormatTimestamp(startTimestamp))
+                local endTimestamp = segment:GetEndTimestamp()
+                if endTimestamp then Tooltip:AddDoubleLine(L.END, FormatTimestamp(endTimestamp)) end
+                Tooltip:AddDoubleLine(L.DURATION, FormatSeconds(segment:GetDuration()))
+            end
+            Tooltip:Show()
+        else
+            Tooltip:Hide()
+        end
+    end)
+    radio:SetOnLeave(onLeave)
+
+    for key, activeSegment in next, ActiveSegments, nil do
+        if activeSegment ~= current then
+            radio = rootDescription:CreateRadio(activeSegment:GetName(), isSelected, setSelected, activeSegment)
+            radio:SetOnEnter(onEnter)
+            radio:SetOnLeave(onLeave)
+        end
+    end
+
+    rootDescription:QueueDivider()
+
+    for i = #Segments, 1, -1 do
+        local savedSegment = Segments[i]
+
+        radio = rootDescription:CreateRadio(savedSegment:GetName(), isSelected, setSelected, savedSegment)
+        radio:SetOnEnter(onEnter)
+        radio:SetOnLeave(onLeave)
     end
 end
 
----@param self DropDownListButton
----@param value Segment
----@param arg Window
-local function combatSegmentOnEnter(self, value, arg)
-    Tooltip:SetOwner(self, "ANCHOR_RIGHT")
-    Tooltip:SetTitle(value.name or L.CURRENT)
-    Tooltip:AddLine(value:GetMapName())
-    local startTimestamp = value:GetStartTimestamp()
-    if startTimestamp then
-        Tooltip:AddDoubleLine(L.START, FormatTimestamp(startTimestamp))
-        local endTimestamp = value:GetEndTimestamp()
-        if endTimestamp then Tooltip:AddDoubleLine(L.END, FormatTimestamp(endTimestamp)) end
-        Tooltip:AddDoubleLine(L.DURATION, FormatSeconds(value:GetDuration()))
-    end
-    Tooltip:Show()
+---@param data fun():Window,string
+---@return boolean
+local function isModeSelected(data)
+    local window, modeKey = data()
+    return window:GetModeKey() == modeKey
 end
 
----@param self DropDownListButton
----@param value Segment
----@param arg Window
-local function segmentOnLeave(self, value, arg) hideTooltip() end
+---@param data fun():Window,string
+---@param menuInputData MenuInputData
+---@param menu MenuProxy
+local function selectMode(data, menuInputData, menu)
+    local window, modeKey = data()
+    if window:GetModeKey() ~= modeKey then window:SetMode(modeKey) end
+end
 
----@param isChecked boolean
----@param value string
----@param arg Window
-local function setMode(isChecked, value, arg) arg:SetMode(value) end
-
----@param isChecked boolean
----@param value any
----@param arg any
-local function createWindow(isChecked, value, arg)
+---@param data any
+---@param menuInputData MenuInputData
+---@param menu MenuProxy
+local function createWindow(data, menuInputData, menu)
     local window = windowPool:Acquire()
     window:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     window:SetMovable(true)
@@ -144,18 +169,70 @@ local function createWindow(isChecked, value, arg)
     window:Show()
 end
 
----@param isChecked boolean
----@param value any
----@param arg Window
-local function unlockWindow(isChecked, value, arg)
-    arg:SetMovable(not isChecked)
-    arg:SetResizable(not isChecked)
+---@param data Window
+---@return boolean
+local function isWindowUnlocked(data) return data:IsResizable() end
+
+---@param data Window
+---@param menuInputData MenuInputData
+---@param menu MenuProxy
+local function toggleUnlockWindow(data, menuInputData, menu)
+    local flag = data:IsResizable()
+    data:SetMovable(not flag)
+    data:SetResizable(not flag)
 end
 
----@param isChecked boolean
----@param value any
----@param arg Window
-local function closeWindow(isChecked, value, arg) windowPool:Release(arg) end
+---@param data Window
+---@param menuInputData MenuInputData
+---@param menu MenuProxy
+local function closeWindow(data, menuInputData, menu) windowPool:Release(data) end
+
+---@param data Window
+---@param menuInputData MenuInputData
+---@param menu MenuProxy
+local function deleteSegment(data, menuInputData, menu)
+    ---@type Segment?
+    local segment = data:GetSegment()
+
+    if segment then DeleteSegment(segment) end
+end
+
+---@param data Window
+---@param menuInputData MenuInputData
+---@param menu MenuProxy
+local function deleteAllSegments(data, menuInputData, menu) DeleteAllSegments() end
+
+---@param data any
+---@return boolean
+local function isCacheEnabled(data) return AddOn.IsCacheEnabled() end
+
+---@param data any
+---@param menuInputData MenuInputData
+---@param menu MenuProxy
+local function toggleEventCache(data, menuInputData, menu) AddOn.SetCacheEnabled(not AddOn.IsCacheEnabled()) end
+
+---@param owner Button
+---@param rootDescription RootMenuDescriptionProxy
+---@param window Window
+local function openSettingsMenu(owner, rootDescription, window)
+    rootDescription:SetScrollMode(GetScreenHeight() * 0.5)
+
+    rootDescription:CreateTitle(L.SETTINGS_DROPDOWN_TITLE)
+
+    rootDescription:CreateButton(L.CREATE_NEW_WINDOW, createWindow)
+    rootDescription:CreateCheckbox(L.UNLOCK_WINDOW, isWindowUnlocked, toggleUnlockWindow, window)
+    local button = rootDescription:CreateButton(L.CLOSE_WINDOW, closeWindow, window)
+    button:SetEnabled(windowPool:GetNumActive() > 1)
+
+    rootDescription:CreateDivider()
+
+    rootDescription:CreateButton(L.DELETE_SEGMENT, deleteSegment, window)
+    rootDescription:CreateButton(L.DELETE_ALL_SEGMENTS, deleteAllSegments)
+
+    rootDescription:CreateDivider()
+
+    rootDescription:CreateCheckbox(L.CACHING_EVENTS, isCacheEnabled, toggleEventCache)
+end
 
 ---@param value number
 ---@param total? number
@@ -260,14 +337,16 @@ function(frame)
     local titleBarFrame = CreateFrame("Frame", nil, titleBar)
     titleBarFrame:SetAllPoints()
 
-    ---@class WindowSegmentButton : DropDownMenuButton
-    local segmentButton = Mixin(CreateFrame("Button", nil, titleBarFrame), DropDownMenu.DropDownMenuButtonMixin)
+    ---@type Button
+    local segmentButton = CreateFrame("Button", nil, titleBarFrame)
     segmentButton:SetPoint("TOPLEFT", titleBarFrame, "TOPLEFT", 2, -2)
     segmentButton:SetPoint("BOTTOMRIGHT", titleBarFrame, "TOPLEFT", 18, -18)
     segmentButton:SetNormalTexture("Interface\\Buttons\\UI-GuildButton-PublicNote-Disabled")
     segmentButton:SetHighlightTexture("Interface\\Buttons\\UI-GuildButton-PublicNote-Up")
-    segmentButton.displayMode = "MENU"
-    segmentButton.OnEnter = function(self, motion)
+    segmentButton:SetScript("OnEnter", --
+    ---@param self Button
+    ---@param motion boolean
+    function(self, motion)
         Tooltip:SetOwner(self, "ANCHOR_RIGHT")
         Tooltip:SetTitle(L.SEGMENTS)
         if segment ~= nil then
@@ -281,174 +360,77 @@ function(frame)
             end
         end
         Tooltip:Show()
-    end
-    segmentButton.OnLeave = hideTooltip
-    segmentButton:OnLoad()
-    ---@param self WindowSegmentButton
-    ---@param level number
-    ---@param value any
-    segmentButton.InitFunc = function(self, level, value)
-        if level == 1 then
-            local info = DropDownMenu:CreateInfo()
+    end)
+    segmentButton:SetScript("OnLeave", hideTooltip)
+    segmentButton:SetScript("OnClick", --
+    ---@param self Button
+    ---@param button string
+    ---@param down boolean
+    function(self, button, down) MenuUtil.CreateContextMenu(self, openSegmentsMenu, window) end)
 
-            info.isTitle = true
-            info.text = format(L.SEGMENTS_DROPDOWN_TITLE, #AddOn.Segments)
-            DropDownMenu:AddButton(level, info, true)
-
-            info.arg = window
-            info.func = setSegment
-
-            local current = AddOn.GetCombatSegment()
-            info.funcOnEnter = combatSegmentOnEnter
-            info.funcOnLeave = segmentOnLeave
-            info.isChecked = current == segment
-            info.text = L.CURRENT
-            info.value = current
-            DropDownMenu:AddButton(level, info, false)
-
-            info.funcOnEnter = segmentOnEnter
-            info.funcOnLeave = segmentOnLeave
-
-            for key, activeSegment in next, ActiveSegments, nil do
-                if activeSegment ~= current then
-                    info.isChecked = activeSegment == segment
-                    info.text = activeSegment:GetName()
-                    info.value = activeSegment
-                    DropDownMenu:AddButton(level, info, false)
-                end
-            end
-
-            if #Segments > 0 then
-                DropDownMenu:AddSeparator(level, info)
-
-                info.arg = window
-                info.func = setSegment
-                info.funcOnEnter = segmentOnEnter
-                info.funcOnLeave = segmentOnLeave
-
-                for i = #Segments, 1, -1 do
-                    local savedSegment = Segments[i]
-
-                    info.isChecked = savedSegment == segment
-                    info.text = savedSegment:GetName()
-                    info.value = savedSegment
-                    DropDownMenu:AddButton(level, info, false)
-                end
-            end
-        end
-    end
-
-    ---@class WindowModeButton : DropDownMenuButton
-    local modeButton = Mixin(CreateFrame("Button", nil, titleBarFrame), DropDownMenu.DropDownMenuButtonMixin)
+    ---@type Button
+    local modeButton = CreateFrame("Button", nil, titleBarFrame)
     modeButton:SetPoint("TOPLEFT", segmentButton, "TOPRIGHT", 0, 0)
     modeButton:SetPoint("BOTTOMRIGHT", segmentButton, "BOTTOMRIGHT", 16, 0)
     modeButton:SetNormalTexture("Interface\\Buttons\\UI-GuildButton-OfficerNote-Disabled")
     modeButton:SetHighlightTexture("Interface\\Buttons\\UI-GuildButton-OfficerNote-Up")
-    modeButton.displayMode = "MENU"
-    modeButton.OnEnter = function(self, motion)
+    modeButton:SetScript("OnEnter", --
+    ---@param self Button
+    ---@param motion boolean
+    function(self, motion)
         Tooltip:SetOwner(self, "ANCHOR_RIGHT")
         Tooltip:SetTitle(L.MODE)
         Tooltip:AddLine(ModeName(modeKey))
         Tooltip:Show()
-    end
-    modeButton.OnLeave = hideTooltip
-    modeButton:OnLoad()
-    ---@param self WindowModeButton
-    ---@param level number
-    ---@param value any
-    modeButton.InitFunc = function(self, level, value)
-        if level == 1 then
-            local info = DropDownMenu:CreateInfo()
-
-            info.arg = window
-            info.func = setMode
-
+    end)
+    modeButton:SetScript("OnLeave", hideTooltip)
+    modeButton:SetScript("OnClick", --
+    ---@param self Button
+    ---@param button string
+    ---@param down boolean
+    function(self, button, down)
+        MenuUtil.CreateContextMenu(self, function(ownerRegion, root, ...)
             local modes = ModeKeys()
             for i = 1, #modes, 1 do
                 local key = modes[i]
 
-                info.hasArrow = false
-                info.menu = nil
-                if modeKey == key then
-                    if segment and mode and mode.Menu then
-                        info.hasArrow = true
-                        info.menu = mode.Menu(filter, segment)
+                local radio = root:CreateRadio(ModeName(key), isModeSelected, selectMode,
+                                               function() return window, key end)
+                if key == modeKey then
+                    if mode and mode.Menu then
+                        mode.Menu(radio, filter, segment)
+                        radio:CreateDivider()
+                        radio:CreateButton(L.RESET, function(data, menuInputData, menu)
+                            wipe(filter)
+                            for k, v in next, mode.DefaultFilter or {}, nil do filter[k] = v end
+                        end)
                     end
                 end
-
-                info.isChecked = modeKey == key
-                info.text = ModeName(key)
-                info.value = key
-                DropDownMenu:AddButton(level, info, false)
             end
-        end
-    end
+        end)
+    end)
 
-    ---@class WindowSettingsButton : DropDownMenuButton
-    local settingsButton = Mixin(CreateFrame("Button", nil, titleBarFrame), DropDownMenu.DropDownMenuButtonMixin)
+    ---@type Button
+    local settingsButton = CreateFrame("Button", nil, titleBarFrame)
     settingsButton:SetPoint("TOPRIGHT", titleBarFrame, "TOPRIGHT", -2, -2)
     settingsButton:SetPoint("BOTTOMLEFT", titleBarFrame, "BOTTOMRIGHT", -18, 2)
     settingsButton:SetNormalTexture("Interface\\Buttons\\UI-OptionsButton")
     settingsButton:GetNormalTexture():SetDesaturated(true) ---@diagnostic disable-line:undefined-field
     settingsButton:SetHighlightTexture("Interface\\Buttons\\UI-OptionsButton", "BLEND")
-    settingsButton.displayMode = "MENU"
-    settingsButton.OnEnter = settingsButton_OnEnter
-    settingsButton.OnLeave = hideTooltip
-    settingsButton:OnLoad()
-    ---@param self WindowSettingsButton
-    ---@param level number
-    ---@param value any
-    settingsButton.InitFunc = function(self, level, value)
-        if level == 1 then
-            local info = DropDownMenu:CreateInfo()
-
-            info.isTitle = true
-            info.text = L.SETTINGS_DROPDOWN_TITLE
-            DropDownMenu:AddButton(level, info, true)
-
-            info.func = createWindow
-            info.isNotCheckable = true
-            info.text = L.CREATE_NEW_WINDOW
-            DropDownMenu:AddButton(level, info, true)
-
-            info.arg = window
-            info.func = unlockWindow
-            info.isChecked = window:IsMovable() and window:IsResizable()
-            info.isNotRadio = true
-            info.text = L.UNLOCK_WINDOW
-            DropDownMenu:AddButton(level, info, true)
-
-            info.arg = window
-            info.func = closeWindow
-            info.isDisabled = windowPool:GetNumActive() <= 1
-            info.isNotCheckable = true
-            info.text = L.CLOSE_WINDOW
-            DropDownMenu:AddButton(level, info, true)
-
-            DropDownMenu:AddSeparator(level, info)
-
-            ---@diagnostic disable-next-line:duplicate-set-field
-            info.func = function(isChecked, value, arg) if segment then DeleteSegment(segment) end end
-            info.isNotCheckable = true
-            info.text = L.DELETE_SEGMENT
-            DropDownMenu:AddButton(level, info, true)
-
-            ---@diagnostic disable-next-line:duplicate-set-field
-            info.func = function(isChecked, value, arg) DeleteAllSegments() end
-            info.isNotCheckable = true
-            info.text = L.DELETE_ALL_SEGMENTS
-            DropDownMenu:AddButton(level, info, true)
-
-            DropDownMenu:AddSeparator(level, info)
-
-            ---@diagnostic disable-next-line:duplicate-set-field
-            info.func = function(isChecked, value, arg) AddOn.SetCacheEnabled(not isChecked) end
-            info.isChecked = AddOn.IsCacheEnabled()
-            info.isNotRadio = true
-            info.text = L.CACHING_EVENTS
-            DropDownMenu:AddButton(level, info, true)
-        end
-    end
+    settingsButton:SetScript("OnEnter", --
+    ---@param self Button
+    ---@param motion boolean
+    function(self, motion)
+        Tooltip:SetOwner(self, "ANCHOR_RIGHT")
+        Tooltip:SetText(L.SETTINGS)
+        Tooltip:Show()
+    end)
+    settingsButton:SetScript("OnLeave", hideTooltip)
+    settingsButton:SetScript("OnClick", --
+    ---@param self Button
+    ---@param button string
+    ---@param down boolean
+    function(self, button, down) MenuUtil.CreateContextMenu(self, openSettingsMenu, window) end)
 
     local textFrame = CreateFrame("Frame", nil, titleBarFrame)
     textFrame:SetPoint("TOPLEFT", modeButton, "TOPRIGHT", 2, 0)
@@ -750,6 +732,9 @@ function(frame)
         segment = selectedSegment
     end
 
+    ---@return Segment?
+    function window:GetSegment() return segment end
+
     ---@param key string
     function window:SetMode(key)
         updateState = 0
@@ -763,6 +748,9 @@ function(frame)
     window:SetMode(modeKey)
 
     ---@return string?
-    function window:GetMode() return modeKey end
+    function window:GetModeKey() return modeKey end
+
+    ---@return Mode?
+    function window:GetMode() return mode end
 end)
 AddOn.WindowPool = windowPool

@@ -14,16 +14,19 @@ local tConcat = table.concat
 local wipe = wipe
 
 local ArrayToPairs = AddOn.ArrayToPairs
-local DropDownMenu = AddOn.DropDownMenu
 local ExtractLink = AddOn.ExtractLink
 local FormatNumber = AddOn.FormatNumber
 local GenerateHyperlink = AddOn.GenerateHyperlink
 local GetClassColor = AddOn.GetClassColor
 local GetClassIcon = AddOn.GetClassIcon
+local GetClassTextureAndName = AddOn.GetClassTextureAndName
 local GetItemInfo = C_Item.GetItemInfo
 local GetItemQualityColor = AddOn.GetItemQualityColor
 local GetPlayerClass = AddOn.GetPlayerClass
 local GetPlayerName = AddOn.GetPlayerName
+local MenuResponseRefresh = MenuResponse.Refresh
+local SortUnitNames = AddOn.SortUnitNames
+local Tooltip = AddOn.Tooltip
 
 local RosterMode = AddOn.RegisterMode("roster", L.MEMBERS)
 if RosterMode then
@@ -33,6 +36,17 @@ if RosterMode then
         return GenerateHyperlink(GetClassColor(GetPlayerClass(source)):WrapTextInColorCode(GetPlayerName(source)),
                                  "mode", "roster", "source", source)
     end
+
+    ---@param frame Frame
+    ---@param elementDescription ElementMenuDescriptionProxy
+    local function onUnitEnter(frame, elementDescription)
+        Tooltip:SetOwner(frame, "ANCHOR_RIGHT")
+        Tooltip:SetHyperlink("unit:" .. elementDescription:GetData())
+    end
+
+    ---@param frame Frame
+    ---@param elementDescription ElementMenuDescriptionProxy
+    local function onUnitOrSpellLeave(frame, elementDescription) Tooltip:Hide() end
 
     ---@class RosterModeFilter
     RosterMode.DefaultFilter = {source = nil}
@@ -120,34 +134,36 @@ if RosterMode then
     end
 
     ---@param filter RosterModeFilter
-    function RosterMode.Menu(filter, segment)
-        local roster = segment.roster
-        if not roster then return function() end end
+    function RosterMode.Menu(element, filter, segment)
+        ---@type table<string, PlayerInfo>?
+        local roster = segment and segment.roster
 
-        return function()
-            ---@type MenuInfo[]
-            local menuInfos = {}
+        if roster then
+            ---@type string[]
+            local playerKeys = {}
+            for key, playerInfo in next, roster, nil do playerKeys[#playerKeys + 1] = key end
+            SortUnitNames(playerKeys)
 
-            local func = function(isChecked, value, arg) filter.source = value end
+            ---@param data string
+            ---@return boolean
+            local function isSelected(data) return filter.source == data end
+            ---@param data string|number
+            ---@param menuInputData MenuInputData
+            ---@param menu MenuProxy
+            local function select(data, menuInputData, menu) filter.source = data end
 
-            for key in next, roster, nil do
-                menuInfos[#menuInfos + 1] = {
-                    func = func,
-                    isChecked = filter.source == key,
-                    text = GetPlayerName(key),
-                    textColor = GetClassColor(GetPlayerClass(key)),
-                    value = key,
-                }
+            for i = 1, #playerKeys, 1 do
+                local key = playerKeys[i]
+
+                local class = GetPlayerClass(key)
+                local radio = element:CreateRadio(
+                                  GetClassColor(class):WrapTextInColorCode(GetClassTextureAndName(class,
+                                                                                                  GetPlayerName(key))),
+                                  isSelected, select, key)
+                radio:SetOnEnter(onUnitEnter)
+                radio:SetOnLeave(onUnitOrSpellLeave)
+                radio:SetResponse(MenuResponseRefresh)
             end
-
-            menuInfos[#menuInfos + 1] = DropDownMenu:GetSeparatorInfo()
-            menuInfos[#menuInfos + 1] = {
-                func = function(isChecked, value, arg) filter.source = nil end,
-                isNotCheckable = true,
-                text = L.RESET,
-            }
-
-            return menuInfos
         end
     end
 

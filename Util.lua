@@ -61,6 +61,9 @@ local L = setmetatable({}, {
 })
 AddOn.L = L
 
+local function nop() end
+AddOn.nop = nop
+
 ---@generic T
 ---@param orig T
 ---@return T copy
@@ -372,7 +375,15 @@ AddOn.GetClassIcon = GetClassIcon
 
 ---@param classFilename? ClassFile
 ---@return string
-function AddOn.GetClassTextureString(classFilename) return CLASS_TEXTURE_STRING[classFilename] or DEFAULT_TEXTURE_STRING end
+local function GetClassTextureString(classFilename) return CLASS_TEXTURE_STRING[classFilename] or DEFAULT_TEXTURE_STRING end
+AddOn.GetClassTextureString = GetClassTextureString
+
+---@param classFilename? ClassFile
+---@param name string
+---@return string
+function AddOn.GetClassTextureAndName(classFilename, name)
+    return format("%s %s", GetClassTextureString(classFilename), name)
+end
 
 ---@param spellId SpellID
 ---@return string
@@ -640,25 +651,25 @@ function AddOn.FillSpellTables(key, data, amount, values, texts, colors, icons, 
     icons[key], iconCoords[key] = GetSpellIcon(key)
 end
 
----@param tbl table
----@param key any
----@param ... any
----@return any
-local function GetValueOrCallFunction(tbl, key, ...)
-    if type(tbl[key]) == "function" then return tbl[key](...) end
-    return tbl[key]
+do -- SortUnitNames
+    ---@param a string
+    ---@param b string
+    ---@return boolean
+    local function comp(a, b) return GetPlayerName(a) < GetPlayerName(b) end
+
+    ---@param spells string[]
+    function AddOn.SortUnitNames(spells) tSort(spells, comp) end
 end
 
----@param a MenuInfo
----@param b MenuInfo
----@return boolean
-local function menuInfoComp(a, b)
-    return (GetValueOrCallFunction(a, "text", a.value, a.arg) or "") <
-               (GetValueOrCallFunction(b, "text", b.value, b.arg) or "")
-end
+do -- SortSpellNames
+    ---@param a string|number
+    ---@param b string|number
+    ---@return boolean
+    local function comp(a, b) return GetSpellName(a) < GetSpellName(b) end
 
----@param menuInfos MenuInfo[]
-function AddOn.SortMenuInfos(menuInfos) tSort(menuInfos, menuInfoComp) end
+    ---@param spells string[]|number[]
+    function AddOn.SortSpellNames(spells) tSort(spells, comp) end
+end
 
 do -- Events
     ---@type table<WowEvent, fun(...)[]>

@@ -823,29 +823,33 @@ local DAMAGE_TAKEN_TITLE_MOD = AddOn.GenerateHyperlink(L.DAMAGE_TAKEN .. "*", "m
 local HIGHLIGHT_FONT_COLOR = HIGHLIGHT_FONT_COLOR
 
 local format = format
+local nop = AddOn.nop
 local max = max
 local next = next
 local tConcat = table.concat
-local tInsert = table.insert
 local tonumber = tonumber
 local wipe = wipe
 
+local AppendTextToTexture = AddOn.AppendTextToTexture
 local ArrayToPairs = AddOn.ArrayToPairs
-local DropDownMenu = AddOn.DropDownMenu
 local ExtractLink = AddOn.ExtractLink
 local FillSpellTables = AddOn.FillSpellTables
 local FillUnitTables = AddOn.FillUnitTables
 local FormatNumber = AddOn.FormatNumber
 local GetClassColor = AddOn.GetClassColor
-local GetClassIcon = AddOn.GetClassIcon
+local GetClassTextureAndName = AddOn.GetClassTextureAndName
 local GetDamageClassColor = AddOn.GetDamageClassColor
 local GetPlayerClass = AddOn.GetPlayerClass
 local GetPlayerName = AddOn.GetPlayerName
+local GetScreenHeight = GetScreenHeight
 local GetSpellIcon = AddOn.GetSpellIcon
 local GetSpellName = AddOn.GetSpellName
 local GetSpellTitleLink = AddOn.GetSpellTitleLink
 local GetUnitTitleLink = AddOn.GetUnitTitleLink
-local SortMenuInfos = AddOn.SortMenuInfos
+local MenuResponseRefresh = MenuResponse.Refresh
+local SortUnitNames = AddOn.SortUnitNames
+local SortSpellNames = AddOn.SortSpellNames
+local Tooltip = AddOn.Tooltip
 
 ---@param filter DamageDoneModeFilter | DamageTakenModeFilter
 ---@param data DamageDoneData|DamageTakenData?
@@ -881,6 +885,24 @@ local function getAmount(filter, data)
     end
     return amount > 0 and amount or 0
 end
+
+---@param frame Frame
+---@param elementDescription ElementMenuDescriptionProxy
+local function onUnitEnter(frame, elementDescription)
+    Tooltip:SetOwner(frame, "ANCHOR_RIGHT")
+    Tooltip:SetHyperlink("unit:" .. elementDescription:GetData())
+end
+
+---@param frame Frame
+---@param elementDescription ElementMenuDescriptionProxy
+local function onSpellEnter(frame, elementDescription)
+    Tooltip:SetOwner(frame, "ANCHOR_RIGHT")
+    Tooltip:SetHyperlink("spell:" .. elementDescription:GetData())
+end
+
+---@param frame Frame
+---@param elementDescription ElementMenuDescriptionProxy
+local function onUnitOrSpellLeave(frame, elementDescription) Tooltip:Hide() end
 
 do -- DamageDone
     local DamageDoneMode = AddOn.RegisterMode("damageDone", L.DAMAGE_DONE)
@@ -1204,189 +1226,154 @@ do -- DamageDone
         end
 
         ---@param filter DamageDoneModeFilter
-        function DamageDoneMode.Menu(filter, segment)
+        function DamageDoneMode.Menu(element, filter, segment)
             ---@type DamageDone?
             local damageDone = segment and segment.damageDone
 
-            return function()
-                ---@type MenuInfo[]
-                return {
-                    {
-                        func = function(isChecked, value, arg) filter.show = "sources" end,
-                        isChecked = filter.show == "sources",
-                        text = L.SOURCES,
-                    },
-                    {
-                        func = function(isChecked, value, arg) filter.show = "spells" end,
-                        isChecked = filter.show == "spells",
-                        text = L.SPELLS,
-                    },
-                    {
-                        func = function(isChecked, value, arg) filter.show = "targets" end,
-                        isChecked = filter.show == "targets",
-                        text = L.TARGETS,
-                    },
-                    damageDone and DropDownMenu:GetSeparatorInfo(),
-                    damageDone and {
-                        hasArrow = true,
-                        isNotCheckable = true,
-                        menu = function(value, arg)
-                            ---@type MenuInfo[]
-                            local info = {}
+            local source = element:CreateRadio(L.SOURCES, function(data) return filter.show == "sources" end,
+                                               function(data, menuInputData, menu) filter.show = "sources" end)
+            source:SetResponse(MenuResponseRefresh)
 
-                            local func = function(isChecked, value, arg)
-                                filter.source = value
-                            end
-                            for key, sourceData in next, damageDone.sources, nil do
-                                local class = GetPlayerClass(key) or sourceData.class
-                                local icon, iconCoords = GetClassIcon(class)
+            local spell = element:CreateRadio(L.SPELLS, function(data) return filter.show == "spells" end,
+                                              function(data, menuInputData, menu) filter.show = "spells" end)
+            spell:SetResponse(MenuResponseRefresh)
 
-                                info[#info + 1] = {
-                                    func = func,
-                                    iconTexCoords = iconCoords,
-                                    iconTexture = icon,
-                                    isChecked = filter.source == key,
-                                    text = GetPlayerName,
-                                    textColor = GetClassColor(class),
-                                    tooltipLink = "unit:" .. key,
-                                    updateSpeed = 2,
-                                    value = key,
-                                }
-                            end
-                            SortMenuInfos(info)
+            local target = element:CreateRadio(L.TARGETS, function(data) return filter.show == "targets" end,
+                                               function(data, menuInputData, menu) filter.show = "targets" end)
+            target:SetResponse(MenuResponseRefresh)
 
-                            tInsert(info, 1, {
-                                func = function(isChecked, value, arg)
-                                    filter.source = nil
-                                end,
-                                isChecked = filter.source == nil,
-                                text = L.ALL,
-                            })
-                            tInsert(info, 2, DropDownMenu:GetSeparatorInfo())
+            element:CreateDivider()
 
-                            return info
-                        end,
-                        text = L.SOURCE,
-                    },
-                    damageDone and {
-                        hasArrow = true,
-                        isNotCheckable = true,
-                        menu = function(value, arg)
-                            ---@type MenuInfo[]
-                            local info = {}
-
-                            local func = function(isChecked, value, arg) filter.spell = value end
-                            for key, spellData in next, damageDone.spells, nil do
-                                local icon, iconCoords = GetSpellIcon(key)
-
-                                info[#info + 1] = {
-                                    func = func,
-                                    iconTexCoords = iconCoords,
-                                    iconTexture = icon,
-                                    isChecked = filter.spell == key,
-                                    text = GetSpellName,
-                                    textColor = GetDamageClassColor(spellData.school),
-                                    tooltipLink = "spell:" .. key,
-                                    updateSpeed = 2,
-                                    value = key,
-                                }
-                            end
-                            SortMenuInfos(info)
-
-                            tInsert(info, 1, {
-                                func = function(isChecked, value, arg) filter.spell = nil end,
-                                isChecked = filter.spell == nil,
-                                text = L.ALL,
-                            })
-                            tInsert(info, 2, DropDownMenu:GetSeparatorInfo())
-
-                            return info
-                        end,
-                        text = L.SPELL,
-                    },
-                    damageDone and {
-                        hasArrow = true,
-                        isNotCheckable = true,
-                        menu = function(value, arg)
-                            ---@type MenuInfo[]
-                            local info = {}
-
-                            local func = function(isChecked, value, arg)
-                                filter.target = value
-                            end
-                            for key, targetData in next, damageDone.targets, nil do
-                                local class = GetPlayerClass(key) or targetData.class
-                                local icon, iconCoords = GetClassIcon(class)
-
-                                info[#info + 1] = {
-                                    func = func,
-                                    iconTexCoords = iconCoords,
-                                    iconTexture = icon,
-                                    isChecked = filter.target == key,
-                                    text = GetPlayerName,
-                                    textColor = GetClassColor(class),
-                                    tooltipLink = "unit:" .. key,
-                                    updateSpeed = 2,
-                                    value = key,
-                                }
-                            end
-                            SortMenuInfos(info)
-
-                            tInsert(info, 1, {
-                                func = function(isChecked, value, arg)
-                                    filter.target = nil
-                                end,
-                                isChecked = filter.target == nil,
-                                text = L.ALL,
-                            })
-                            tInsert(info, 2, DropDownMenu:GetSeparatorInfo())
-
-                            return info
-                        end,
-                        text = L.TARGET,
-                    },
-                    DropDownMenu:GetSeparatorInfo(),
-                    {
-                        func = function(isChecked, value, arg) filter.pets = not isChecked end,
-                        isChecked = filter.pets,
-                        isNotRadio = true,
-                        text = L.PETS,
-                    },
-                    {
-                        func = function(isChecked, value, arg) filter.overkill = not isChecked end,
-                        isChecked = filter.overkill,
-                        isNotRadio = true,
-                        text = L.OVERKILL,
-                    },
-                    {
-                        func = function(isChecked, value, arg) filter.absorbed = not isChecked end,
-                        isChecked = filter.absorbed,
-                        isNotRadio = true,
-                        text = L.ABSORBED,
-                    },
-                    {
-                        func = function(isChecked, value, arg) filter.group = not isChecked end,
-                        isChecked = filter.group,
-                        isNotRadio = true,
-                        text = L.GROUP,
-                    },
-                    DropDownMenu:GetSeparatorInfo(),
-                    {
-                        func = function(isChecked, value, arg)
-                            filter.show = "sources"
-                            filter.source = nil
-                            filter.spell = nil
-                            filter.target = nil
-                            filter.pets = true
-                            filter.overkill = false
-                            filter.absorbed = true
-                            filter.group = false
-                        end,
-                        isNotCheckable = true,
-                        text = L.RESET,
-                    },
-                }
+            local sources = element:CreateButton(L.SOURCE, nop)
+            sources:SetScrollMode(GetScreenHeight() * 0.5)
+            do -- sources
+                local radio = sources:CreateRadio(L.ALL, function(data) return filter.source == nil end,
+                                                  function(data, menuInputData, menu) filter.source = nil end)
+                radio:SetResponse(MenuResponseRefresh)
             end
+            sources:QueueDivider()
+
+            local spells = element:CreateButton(L.SPELL, nop)
+            spells:SetScrollMode(GetScreenHeight() * 0.5)
+            do -- spells
+                local radio = spells:CreateRadio(L.ALL, function(data) return filter.spell == nil end,
+                                                 function(data, menuInputData, menu) filter.spell = nil end)
+                radio:SetResponse(MenuResponseRefresh)
+            end
+            spells:QueueDivider()
+
+            local targets = element:CreateButton(L.TARGET, nop)
+            targets:SetScrollMode(GetScreenHeight() * 0.5)
+            do -- targets
+                local radio = targets:CreateRadio(L.ALL, function(data) return filter.target == nil end,
+                                                  function(data, menuInputData, menu) filter.target = nil end)
+                radio:SetResponse(MenuResponseRefresh)
+            end
+            targets:QueueDivider()
+
+            if damageDone then
+                do -- sources
+                    ---@type string[]
+                    local sourceKeys = {}
+                    for key, sourceData in next, damageDone.sources, nil do
+                        sourceKeys[#sourceKeys + 1] = key
+                    end
+                    SortUnitNames(sourceKeys)
+
+                    ---@param data string
+                    ---@return boolean
+                    local function isSelected(data) return filter.source == data end
+                    ---@param data string|number
+                    ---@param menuInputData MenuInputData
+                    ---@param menu MenuProxy
+                    local function select(data, menuInputData, menu) filter.source = data end
+
+                    for i = 1, #sourceKeys, 1 do
+                        local key = sourceKeys[i]
+                        local sourceData = damageDone.sources[key]
+
+                        local class = GetPlayerClass(key) or sourceData.class
+                        local radio = sources:CreateRadio(GetClassColor(class):WrapTextInColorCode(
+                                                              GetClassTextureAndName(class, GetPlayerName(key))),
+                                                          isSelected, select, key)
+                        radio:SetOnEnter(onUnitEnter)
+                        radio:SetOnLeave(onUnitOrSpellLeave)
+                        radio:SetResponse(MenuResponseRefresh)
+                    end
+                end
+                do -- spells
+                    ---@type string[]|number[]
+                    local spellKeys = {}
+                    for key, spellData in next, damageDone.spells, nil do
+                        spellKeys[#spellKeys + 1] = key
+                    end
+                    SortSpellNames(spellKeys)
+
+                    ---@param data string|number
+                    ---@return boolean
+                    local function isSelected(data) return filter.spell == data end
+                    ---@param data string|number
+                    ---@param menuInputData MenuInputData
+                    ---@param menu MenuProxy
+                    local function select(data, menuInputData, menu) filter.spell = data end
+
+                    for i = 1, #spellKeys, 1 do
+                        local key = spellKeys[i]
+                        local spellData = damageDone.spells[key]
+
+                        if spellData then
+                            local icon, iconCoords = GetSpellIcon(key)
+                            local radio = spells:CreateRadio(
+                                              GetDamageClassColor(spellData.school):WrapTextInColorCode(
+                                                  AppendTextToTexture(GetSpellName(key), icon, iconCoords)), isSelected,
+                                              select, key)
+                            radio:SetOnEnter(onSpellEnter)
+                            radio:SetOnLeave(onUnitOrSpellLeave)
+                            radio:SetResponse(MenuResponseRefresh)
+                        end
+                    end
+                end
+                do -- targets
+                    ---@type string[]
+                    local targetKeys = {}
+                    for key, sourceData in next, damageDone.targets, nil do
+                        targetKeys[#targetKeys + 1] = key
+                    end
+                    SortUnitNames(targetKeys)
+
+                    ---@param data string
+                    ---@return boolean
+                    local function isSelected(data) return filter.target == data end
+                    ---@param data string
+                    ---@param menuInputData MenuInputData
+                    ---@param menu MenuProxy
+                    local function select(data, menuInputData, menu) filter.target = data end
+
+                    for i = 1, #targetKeys, 1 do
+                        local key = targetKeys[i]
+                        local targetData = damageDone.targets[key]
+
+                        local class = GetPlayerClass(key) or targetData.class
+                        local radio = targets:CreateRadio(GetClassColor(class):WrapTextInColorCode(
+                                                              GetClassTextureAndName(class, GetPlayerName(key))),
+                                                          isSelected, select, key)
+                        radio:SetOnEnter(onUnitEnter)
+                        radio:SetOnLeave(onUnitOrSpellLeave)
+                        radio:SetResponse(MenuResponseRefresh)
+                    end
+                end
+            end
+
+            element:CreateDivider()
+
+            element:CreateCheckbox(L.PETS, function(data) return filter.pets == true end,
+                                   function(data, menuInputData, menu) filter.pets = not filter.pets end)
+            element:CreateCheckbox(L.OVERKILL, function(data) return filter.overkill == true end,
+                                   function(data, menuInputData, menu) filter.overkill = not filter.overkill end)
+            element:CreateCheckbox(L.ABSORBED, function(data) return filter.absorbed == true end,
+                                   function(data, menuInputData, menu) filter.absorbed = not filter.absorbed end)
+            element:CreateCheckbox(L.GROUP, function(data) return filter.group == true end,
+                                   function(data, menuInputData, menu) filter.group = not filter.group end)
         end
 
         ---@param filter DamageDoneModeFilter
@@ -2239,182 +2226,152 @@ do -- DamageTaken
         end
 
         ---@param filter DamageTakenModeFilter
-        function DamageTakenMode.Menu(filter, segment)
+        function DamageTakenMode.Menu(element, filter, segment)
             ---@type DamageTaken?
             local damageTaken = segment and segment.damageTaken
 
-            return function()
-                ---@type MenuInfo[]
-                return {
-                    {
-                        func = function(isChecked, value, arg) filter.show = "targets" end,
-                        isChecked = filter.show == "targets",
-                        text = L.TARGETS,
-                    },
-                    {
-                        func = function(isChecked, value, arg) filter.show = "spells" end,
-                        isChecked = filter.show == "spells",
-                        text = L.SPELLS,
-                    },
-                    {
-                        func = function(isChecked, value, arg) filter.show = "sources" end,
-                        isChecked = filter.show == "sources",
-                        text = L.SOURCES,
-                    },
-                    damageTaken and DropDownMenu:GetSeparatorInfo(),
-                    damageTaken and {
-                        hasArrow = true,
-                        isNotCheckable = true,
-                        menu = function(value, arg)
-                            ---@type MenuInfo[]
-                            local info = {}
+            local target = element:CreateRadio(L.TARGETS, function(data) return filter.show == "targets" end,
+                                               function(data, menuInputData, menu) filter.show = "targets" end)
+            target:SetResponse(MenuResponseRefresh)
 
-                            local func = function(isChecked, value, arg)
-                                filter.target = value
-                            end
-                            for key, targetData in next, damageTaken.targets, nil do
-                                local class = GetPlayerClass(key) or targetData.class
-                                local icon, iconCoords = GetClassIcon(class)
+            local spell = element:CreateRadio(L.SPELLS, function(data) return filter.show == "spells" end,
+                                              function(data, menuInputData, menu) filter.show = "spells" end)
+            spell:SetResponse(MenuResponseRefresh)
 
-                                info[#info + 1] = {
-                                    func = func,
-                                    iconTexCoords = iconCoords,
-                                    iconTexture = icon,
-                                    isChecked = filter.target == key,
-                                    text = GetPlayerName,
-                                    textColor = GetClassColor(class),
-                                    tooltipLink = "unit:" .. key,
-                                    updateSpeed = 2,
-                                    value = key,
-                                }
-                            end
-                            SortMenuInfos(info)
+            local source = element:CreateRadio(L.SOURCES, function(data) return filter.show == "sources" end,
+                                               function(data, menuInputData, menu) filter.show = "sources" end)
+            source:SetResponse(MenuResponseRefresh)
 
-                            tInsert(info, 1, {
-                                func = function(isChecked, value, arg)
-                                    filter.target = nil
-                                end,
-                                isChecked = filter.target == nil,
-                                text = L.ALL,
-                            })
-                            tInsert(info, 2, DropDownMenu:GetSeparatorInfo())
+            element:CreateDivider()
 
-                            return info
-                        end,
-                        text = L.TARGET,
-                    },
-                    damageTaken and {
-                        hasArrow = true,
-                        isNotCheckable = true,
-                        menu = function(value, arg)
-                            ---@type MenuInfo[]
-                            local info = {}
-
-                            local func = function(isChecked, value, arg) filter.spell = value end
-                            for key, spellData in next, damageTaken.spells, nil do
-                                local icon, iconCoords = GetSpellIcon(key)
-
-                                info[#info + 1] = {
-                                    func = func,
-                                    iconTexCoords = iconCoords,
-                                    iconTexture = icon,
-                                    isChecked = filter.spell == key,
-                                    text = GetSpellName,
-                                    textColor = GetDamageClassColor(spellData.school),
-                                    tooltipLink = "spell:" .. key,
-                                    updateSpeed = 2,
-                                    value = key,
-                                }
-                            end
-                            SortMenuInfos(info)
-
-                            tInsert(info, 1, {
-                                func = function(isChecked, value, arg) filter.spell = nil end,
-                                isChecked = filter.spell == nil,
-                                text = L.ALL,
-                            })
-                            tInsert(info, 2, DropDownMenu:GetSeparatorInfo())
-
-                            return info
-                        end,
-                        text = L.SPELL,
-                    },
-                    damageTaken and {
-                        hasArrow = true,
-                        isNotCheckable = true,
-                        menu = function(value, arg)
-                            ---@type MenuInfo[]
-                            local info = {}
-
-                            local func = function(isChecked, value, arg)
-                                filter.source = value
-                            end
-                            for key, sourceData in next, damageTaken.sources, nil do
-                                local class = GetPlayerClass(key) or sourceData.class
-                                local icon, iconCoords = GetClassIcon(class)
-
-                                info[#info + 1] = {
-                                    func = func,
-                                    iconTexCoords = iconCoords,
-                                    iconTexture = icon,
-                                    isChecked = filter.source == key,
-                                    text = GetPlayerName,
-                                    textColor = GetClassColor(class),
-                                    tooltipLink = "unit:" .. key,
-                                    updateSpeed = 2,
-                                    value = key,
-                                }
-                            end
-                            SortMenuInfos(info)
-
-                            tInsert(info, 1, {
-                                func = function(isChecked, value, arg)
-                                    filter.source = nil
-                                end,
-                                isChecked = filter.source == nil,
-                                text = L.ALL,
-                            })
-                            tInsert(info, 2, DropDownMenu:GetSeparatorInfo())
-
-                            return info
-                        end,
-                        text = L.SOURCE,
-                    },
-                    DropDownMenu:GetSeparatorInfo(),
-                    {
-                        func = function(isChecked, value, arg) filter.overkill = not isChecked end,
-                        isChecked = filter.overkill,
-                        isNotRadio = true,
-                        text = L.OVERKILL,
-                    },
-                    {
-                        func = function(isChecked, value, arg) filter.absorbed = not isChecked end,
-                        isChecked = filter.absorbed,
-                        isNotRadio = true,
-                        text = L.ABSORBED,
-                    },
-                    {
-                        func = function(isChecked, value, arg) filter.group = not isChecked end,
-                        isChecked = filter.group,
-                        isNotRadio = true,
-                        text = L.GROUP,
-                    },
-                    DropDownMenu:GetSeparatorInfo(),
-                    {
-                        func = function(isChecked, value, arg)
-                            filter.show = "targets"
-                            filter.target = nil
-                            filter.spell = nil
-                            filter.source = nil
-                            filter.overkill = false
-                            filter.absorbed = false
-                            filter.group = true
-                        end,
-                        isNotCheckable = true,
-                        text = L.RESET,
-                    },
-                }
+            local targets = element:CreateButton(L.TARGET, nop)
+            targets:SetScrollMode(GetScreenHeight() * 0.5)
+            do -- targets
+                local radio = targets:CreateRadio(L.ALL, function(data) return filter.target == nil end,
+                                                  function(data, menuInputData, menu) filter.target = nil end)
+                radio:SetResponse(MenuResponseRefresh)
             end
+            targets:QueueDivider()
+
+            local spells = element:CreateButton(L.SPELL, nop)
+            spells:SetScrollMode(GetScreenHeight() * 0.5)
+            do -- spells
+                local radio = spells:CreateRadio(L.ALL, function(data) return filter.spell == nil end,
+                                                 function(data, menuInputData, menu) filter.spell = nil end)
+                radio:SetResponse(MenuResponseRefresh)
+            end
+            spells:QueueDivider()
+
+            local sources = element:CreateButton(L.SOURCE, nop)
+            sources:SetScrollMode(GetScreenHeight() * 0.5)
+            do -- sources
+                local radio = sources:CreateRadio(L.ALL, function(data) return filter.source == nil end,
+                                                  function(data, menuInputData, menu) filter.source = nil end)
+                radio:SetResponse(MenuResponseRefresh)
+            end
+            sources:QueueDivider()
+
+            if damageTaken then
+                do -- sources
+                    ---@type string[]
+                    local sourceKeys = {}
+                    for key, sourceData in next, damageTaken.sources, nil do
+                        sourceKeys[#sourceKeys + 1] = key
+                    end
+                    SortUnitNames(sourceKeys)
+
+                    ---@param data string
+                    ---@return boolean
+                    local function isSelected(data) return filter.source == data end
+                    ---@param data string|number
+                    ---@param menuInputData MenuInputData
+                    ---@param menu MenuProxy
+                    local function select(data, menuInputData, menu) filter.source = data end
+
+                    for i = 1, #sourceKeys, 1 do
+                        local key = sourceKeys[i]
+                        local sourceData = damageTaken.sources[key]
+
+                        local class = GetPlayerClass(key) or sourceData.class
+                        local radio = sources:CreateRadio(GetClassColor(class):WrapTextInColorCode(
+                                                              GetClassTextureAndName(class, GetPlayerName(key))),
+                                                          isSelected, select, key)
+                        radio:SetOnEnter(onUnitEnter)
+                        radio:SetOnLeave(onUnitOrSpellLeave)
+                        radio:SetResponse(MenuResponseRefresh)
+                    end
+                end
+                do -- spells
+                    ---@type string[]|number[]
+                    local spellKeys = {}
+                    for key, spellData in next, damageTaken.spells, nil do
+                        spellKeys[#spellKeys + 1] = key
+                    end
+                    SortSpellNames(spellKeys)
+
+                    ---@param data string|number
+                    ---@return boolean
+                    local function isSelected(data) return filter.spell == data end
+                    ---@param data string|number
+                    ---@param menuInputData MenuInputData
+                    ---@param menu MenuProxy
+                    local function select(data, menuInputData, menu) filter.spell = data end
+
+                    for i = 1, #spellKeys, 1 do
+                        local key = spellKeys[i]
+                        local spellData = damageTaken.spells[key]
+
+                        if spellData then
+                            local icon, iconCoords = GetSpellIcon(key)
+                            local radio = spells:CreateRadio(
+                                              GetDamageClassColor(spellData.school):WrapTextInColorCode(
+                                                  AppendTextToTexture(GetSpellName(key), icon, iconCoords)), isSelected,
+                                              select, key)
+                            radio:SetOnEnter(onSpellEnter)
+                            radio:SetOnLeave(onUnitOrSpellLeave)
+                            radio:SetResponse(MenuResponseRefresh)
+                        end
+                    end
+                end
+                do -- targets
+                    ---@type string[]
+                    local targetKeys = {}
+                    for key, sourceData in next, damageTaken.targets, nil do
+                        targetKeys[#targetKeys + 1] = key
+                    end
+                    SortUnitNames(targetKeys)
+
+                    ---@param data string
+                    ---@return boolean
+                    local function isSelected(data) return filter.target == data end
+                    ---@param data string
+                    ---@param menuInputData MenuInputData
+                    ---@param menu MenuProxy
+                    local function select(data, menuInputData, menu) filter.target = data end
+
+                    for i = 1, #targetKeys, 1 do
+                        local key = targetKeys[i]
+                        local targetData = damageTaken.targets[key]
+
+                        local class = GetPlayerClass(key) or targetData.class
+                        local radio = targets:CreateRadio(GetClassColor(class):WrapTextInColorCode(
+                                                              GetClassTextureAndName(class, GetPlayerName(key))),
+                                                          isSelected, select, key)
+                        radio:SetOnEnter(onUnitEnter)
+                        radio:SetOnLeave(onUnitOrSpellLeave)
+                        radio:SetResponse(MenuResponseRefresh)
+                    end
+                end
+            end
+
+            element:CreateDivider()
+
+            element:CreateCheckbox(L.OVERKILL, function(data) return filter.overkill == true end,
+                                   function(data, menuInputData, menu) filter.overkill = not filter.overkill end)
+            element:CreateCheckbox(L.ABSORBED, function(data) return filter.absorbed == true end,
+                                   function(data, menuInputData, menu) filter.absorbed = not filter.absorbed end)
+            element:CreateCheckbox(L.GROUP, function(data) return filter.group == true end,
+                                   function(data, menuInputData, menu) filter.group = not filter.group end)
         end
 
         ---@param filter DamageTakenModeFilter
