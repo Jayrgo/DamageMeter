@@ -852,5 +852,14 @@ function(frame)
 
     ---@return Mode?
     function window:GetMode() return mode end
+
+    ---@param newFilter table
+    function window:SetFilter(newFilter)
+        wipe(filter)
+        CopyTo(newFilter, filter, true)
+    end
+
+    ---@return table
+    function window:GetFilter() return Copy(filter, true) end
 end)
 AddOn.WindowPool = windowPool

@@ -35,6 +35,7 @@ function(addOnName, containsBindings)
             window:SetResizable(windows[i].isResizable == nil and true or windows[i].isResizable)
 
             window:SetMode(type(windows[i].modeKey) == "string" and windows[i].modeKey or "damageDone", true)
+            window:SetFilter(type(windows[i].filter) == "table" and windows[i].filter)
 
             window:Show()
         end
@@ -57,7 +58,8 @@ function(closingClient)
             size = {window:GetSize()},
             isMovable = window:IsMovable(),
             isResizable = window:IsResizable(),
-            modeKey = window:GetMode(),
+            modeKey = window:GetModeKey(),
+            filter = window:GetFilter(),
         }
     end
 

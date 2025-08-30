@@ -65,26 +65,28 @@ local function nop() end
 AddOn.nop = nop
 
 ---@generic T
----@param orig T
+---@param src T
+---@param dst? T
 ---@return T copy
-local function shallowcopy(orig)
-    if type(orig) == "table" then
-        local copy = {}
-        for key, value in next, orig, nil do copy[key] = value end
-        return setmetatable(copy, getmetatable(orig))
+local function shallowcopy(src, dst)
+    if type(src) == "table" then
+        local copy = dst and wipe(dst) or {}
+        for key, value in next, src, nil do copy[key] = value end
+        return setmetatable(copy, getmetatable(src))
     else
         return orig
     end
 end
 
 ---@generic T
----@param orig T
+---@param src T
+---@param dst? T
 ---@return T copy
-local function deepcopy(orig)
-    if type(orig) == "table" then
-        local copy = {}
-        for key, value in next, orig, nil do copy[deepcopy(key)] = deepcopy(value) end
-        return setmetatable(copy, deepcopy(getmetatable(orig)))
+local function deepcopy(src, dst)
+    if type(src) == "table" then
+        local copy = dst and wipe(dst) or {}
+        for key, value in next, src, nil do copy[deepcopy(key)] = deepcopy(value) end
+        return setmetatable(copy, deepcopy(getmetatable(src)))
     else
         return orig
     end
@@ -95,6 +97,13 @@ end
 ---@param deep? boolean
 ---@return T copy
 function AddOn.Copy(orig, deep) return deep and deepcopy(orig) or shallowcopy(orig) end
+
+---@generic T
+---@param src T
+---@param dst T
+---@param deep? boolean
+---@return T copy
+function AddOn.CopyTo(src, dst, deep) return deep and deepcopy(src, dst) or shallowcopy(src, dst) end
 
 ---@param ... any
 ---@return SafeTable
