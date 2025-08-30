@@ -7,6 +7,7 @@ local format = format
 local max = max
 local min = min
 local next = next
+local nop = AddOn.nop
 local setmetatable = setmetatable
 local time = time
 local tSort = table.sort
@@ -26,6 +27,7 @@ local FormatTimestamp = AddOn.FormatTimestamp
 local GetScreenHeight = GetScreenHeight
 local GetScreenWidth = GetScreenWidth
 local IsModifierKeyDown = IsModifierKeyDown
+local MenuResponseClose = MenuResponse.Close
 local Mode = AddOn.Mode
 local ModeKeys = AddOn.ModeKeys
 local ModeName = AddOn.ModeName
@@ -155,7 +157,24 @@ end
 ---@param menu MenuProxy
 local function selectMode(data, menuInputData, menu)
     local window, modeKey = data()
-    if window:GetModeKey() ~= modeKey then window:SetMode(modeKey) end
+    if window:GetModeKey() ~= modeKey then window:SetMode(modeKey, true) end
+end
+
+---@param filterDescription? FilterDescription
+---@param filter? table
+---@return table
+local function getDefaultFilter(filterDescription, filter)
+    filter = filter or {}
+    wipe(filter)
+
+    if filterDescription then
+        for i = 1, #filterDescription or 0, 1 do
+            local definition = filterDescription[i]
+            filter[definition.Name] = definition.Default
+        end
+    end
+
+    return filter
 end
 
 ---@param data any
@@ -393,18 +412,71 @@ function(frame)
             local modes = ModeKeys()
             for i = 1, #modes, 1 do
                 local key = modes[i]
+                local mode2 = Mode(key)
 
                 local radio = root:CreateRadio(ModeName(key), isModeSelected, selectMode,
                                                function() return window, key end)
-                if key == modeKey then
-                    if mode and mode.Menu then
-                        mode.Menu(radio, filter, segment)
-                        radio:CreateDivider()
-                        radio:CreateButton(L.RESET, function(data, menuInputData, menu)
-                            wipe(filter)
-                            for k, v in next, mode.DefaultFilter or {}, nil do filter[k] = v end
-                        end)
+                radio:SetResponse(MenuResponseClose)
+                radio:SetScrollMode(GetScreenHeight() * 0.5)
+
+                if mode2 and mode2.Filter then
+                    local filterDescription = mode2.Filter(segment)
+                    local filter2 = key == modeKey and filter or getDefaultFilter(filterDescription)
+
+                    local lastDescriptionType
+                    for j = 1, #filterDescription, 1 do
+                        local description = filterDescription[j]
+                        local descriptionType = description.Type
+
+                        if lastDescriptionType and lastDescriptionType ~= descriptionType then
+                            radio:QueueDivider()
+                            lastDescriptionType = descriptionType
+                        else
+                            lastDescriptionType = descriptionType
+                        end
+
+                        if descriptionType == "select" then
+                            local select = radio
+                            if description.Title then
+                                select = radio:CreateButton(description.Title, nop)
+                                select:SetScrollMode(GetScreenHeight() * 0.5)
+                            end
+                            for k = 1, description.Values and #description.Values or 0, 1 do
+                                local definition = description.Values[k]
+                                local value = select:CreateRadio(definition.Title or tostring(definition.Value),
+                                                                 function(data)
+                                    return filter2[description.Name] == definition.Value
+                                end, function(data, menuInputData, menu)
+                                    filter2[description.Name] = definition.Value
+                                    if key ~= modeKey then
+                                        window:SetMode(key)
+                                        filter = filter2
+                                    end
+                                end, definition)
+                            end
+                            if select == radio then radio:QueueDivider() end
+                        elseif descriptionType == "toggle" then
+                            local toggle = radio:CreateCheckbox(description.Title or description.Name or "",
+                                                                function(data)
+                                return filter2[description.Name]
+                            end, function(data, menuInputData, menu)
+                                filter2[description.Name] = not filter2[description.Name]
+                                if key ~= modeKey then
+                                    window:SetMode(key)
+                                    filter = filter2
+                                end
+                            end)
+                        end
                     end
+
+                    radio:QueueDivider(true)
+                    radio:CreateButton(L.RESET, function(data, menuInputData, menu)
+                        filter2 = getDefaultFilter(filterDescription, filter2)
+                        if key ~= modeKey then
+                            window:SetMode(key)
+                            filter = filter2
+                        end
+                    end)
                 end
             end
         end)
@@ -741,14 +813,12 @@ function(frame)
     function window:GetSegment() return segment end
 
     ---@param key string
-    function window:SetMode(key)
+    ---@param resetFilter? boolean
+    function window:SetMode(key, resetFilter)
         updateState = 0
         modeKey = key
         mode = Mode(key)
-        if mode then
-            wipe(filter)
-            for k, v in next, mode.DefaultFilter or {}, nil do filter[k] = v end
-        end
+        if mode and resetFilter then filter = getDefaultFilter(mode.Filter and mode.Filter(segment), filter) end
     end
     window:SetMode(modeKey)
 

@@ -195,7 +195,6 @@ local L = AddOn.L
 local INTERRUPT_TITLE = AddOn.GenerateHyperlink(L.INTERRUPT, "mode", "interrupt")
 local INTERRUPT_TITLE_MOD = AddOn.GenerateHyperlink(L.INTERRUPT .. "*", "mode", "interrupt")
 
-local format = format
 local max = max
 local next = next
 local tConcat = table.concat
@@ -207,21 +206,17 @@ local ArrayToPairs = AddOn.ArrayToPairs
 local ExtractLink = AddOn.ExtractLink
 local FillSpellTables = AddOn.FillSpellTables
 local FillUnitTables = AddOn.FillUnitTables
-local FormatNumber = AddOn.FormatNumber
 local GetClassColor = AddOn.GetClassColor
 local GetClassTextureAndName = AddOn.GetClassTextureAndName
 local GetDamageClassColor = AddOn.GetDamageClassColor
 local GetPlayerClass = AddOn.GetPlayerClass
 local GetPlayerName = AddOn.GetPlayerName
-local GetScreenHeight = GetScreenHeight
 local GetSpellIcon = AddOn.GetSpellIcon
 local GetSpellName = AddOn.GetSpellName
 local GetSpellTitleLink = AddOn.GetSpellTitleLink
 local GetUnitTitleLink = AddOn.GetUnitTitleLink
-local MenuResponseRefresh = MenuResponse.Refresh
 local SortUnitNames = AddOn.SortUnitNames
 local SortSpellNames = AddOn.SortSpellNames
-local Tooltip = AddOn.Tooltip
 
 local InterruptMode = AddOn.RegisterMode("interrupt", L.INTERRUPT)
 if InterruptMode then
@@ -240,33 +235,138 @@ if InterruptMode then
         return amount > 0 and amount or 0
     end
 
-    ---@param frame Frame
-    ---@param elementDescription ElementMenuDescriptionProxy
-    local function onUnitEnter(frame, elementDescription)
-        Tooltip:SetOwner(frame, "ANCHOR_RIGHT")
-        Tooltip:SetHyperlink("unit:" .. elementDescription:GetData())
-    end
-
-    ---@param frame Frame
-    ---@param elementDescription ElementMenuDescriptionProxy
-    local function onSpellEnter(frame, elementDescription)
-        Tooltip:SetOwner(frame, "ANCHOR_RIGHT")
-        Tooltip:SetHyperlink("spell:" .. elementDescription:GetData())
-    end
-
-    ---@param frame Frame
-    ---@param elementDescription ElementMenuDescriptionProxy
-    local function onUnitOrSpellLeave(frame, elementDescription) Tooltip:Hide() end
-
     ---@class InterruptModeFilter
-    InterruptMode.DefaultFilter = {
-        show = "sources",
-        source = nil,
-        spell = nil,
-        target = nil,
-        pets = true,
-        group = false,
-    }
+    ---@field show "sources"|"spells"|"targets"
+    ---@field source string?
+    ---@field spell SpellID?
+    ---@field target string?
+    ---@field pets boolean
+    ---@field group boolean
+
+    function InterruptMode.Filter(segment)
+        return {
+            {
+                Type = "select",
+                Name = "show",
+                Values = {
+                    {Value = "sources", Title = L.SOURCES},
+                    {Value = "spells", Title = L.SPELLS},
+                    {Value = "targets", Title = L.TARGETS},
+                },
+                Default = "sources",
+            },
+            {
+                Type = "select",
+                Name = "source",
+                Title = L.SOURCE,
+                Default = nil,
+                Nilable = true,
+                Values = (function()
+                    ---@type Interrupt?
+                    local interruptData = segment and segment.interrupt
+                    local values = {{Title = L.ALL, Value = nil}}
+
+                    if interruptData then
+                        ---@type string[]
+                        local sourceKeys = {}
+                        for key, sourceData in next, interruptData.sources, nil do
+                            sourceKeys[#sourceKeys + 1] = key
+                        end
+                        SortUnitNames(sourceKeys)
+
+                        for i = 1, #sourceKeys, 1 do
+                            local key = sourceKeys[i]
+                            local sourceData = interruptData.sources[key]
+
+                            local class = GetPlayerClass(key) or sourceData.class
+                            values[#values + 1] = {
+                                Title = GetClassColor(class):WrapTextInColorCode(GetClassTextureAndName(class,
+                                                                                                        GetPlayerName(
+                                                                                                            key))),
+                                Value = key,
+                            }
+                        end
+                    end
+
+                    return values
+                end)(),
+            },
+            {
+                Type = "select",
+                Name = "spell",
+                Title = L.SPELL,
+                Default = nil,
+                Nilable = true,
+                Values = (function()
+                    ---@type Interrupt?
+                    local interruptData = segment and segment.interrupt
+                    local values = {{Title = L.ALL, Value = nil}}
+
+                    if interruptData then
+                        ---@type string[]|number[]
+                        local spellKeys = {}
+                        for key, spellData in next, interruptData.spells, nil do
+                            spellKeys[#spellKeys + 1] = key
+                        end
+                        SortSpellNames(spellKeys)
+
+                        for i = 1, #spellKeys, 1 do
+                            local key = spellKeys[i]
+                            local spellData = interruptData.spells[key]
+
+                            if spellData then
+                                values[#values + 1] = {
+                                    Title = GetDamageClassColor(spellData.school):WrapTextInColorCode(
+                                        AppendTextToTexture(GetSpellName(key), GetSpellIcon(key))),
+                                    Value = key,
+                                }
+                            end
+                        end
+                    end
+
+                    return values
+                end)(),
+            },
+            {
+                Type = "select",
+                Name = "target",
+                Title = L.TARGET,
+                Default = nil,
+                Nilable = true,
+                Values = (function()
+                    ---@type Interrupt?
+                    local interruptData = segment and segment.interrupt
+                    local values = {{Title = L.ALL, Value = nil}}
+
+                    if interruptData then
+                        ---@type string[]
+                        local targetKeys = {}
+                        for key, targetData in next, interruptData.targets, nil do
+                            targetKeys[#targetKeys + 1] = key
+                        end
+                        SortUnitNames(targetKeys)
+
+                        for i = 1, #targetKeys, 1 do
+                            local key = targetKeys[i]
+                            local targetData = interruptData.targets[key]
+
+                            local class = GetPlayerClass(key) or targetData.class
+                            values[#values + 1] = {
+                                Title = GetClassColor(class):WrapTextInColorCode(GetClassTextureAndName(class,
+                                                                                                        GetPlayerName(
+                                                                                                            key))),
+                                Value = key,
+                            }
+                        end
+                    end
+
+                    return values
+                end)(),
+            },
+            {Type = "toggle", Name = "pets", Default = true, Title = L.PETS},
+            {Type = "toggle", Name = "group", Default = false, Title = L.GROUP},
+        }
+    end
 
     do -- Title
         ---@type string[]
@@ -563,148 +663,6 @@ if InterruptMode then
         end
 
         return maxAmount
-    end
-
-    ---@param filter InterruptModeFilter
-    function InterruptMode.Menu(element, filter, segment)
-        ---@type Interrupt?
-        local interrupt = segment and segment.interrupt
-
-        local source = element:CreateRadio(L.SOURCES, function(data) return filter.show == "sources" end,
-                                           function(data, menuInputData, menu) filter.show = "sources" end)
-        source:SetResponse(MenuResponseRefresh)
-
-        local spell = element:CreateRadio(L.SPELLS, function(data) return filter.show == "spells" end,
-                                          function(data, menuInputData, menu) filter.show = "spells" end)
-        spell:SetResponse(MenuResponseRefresh)
-
-        local target = element:CreateRadio(L.TARGETS, function(data) return filter.show == "targets" end,
-                                           function(data, menuInputData, menu) filter.show = "targets" end)
-        target:SetResponse(MenuResponseRefresh)
-
-        element:CreateDivider()
-
-        local sources = element:CreateButton(L.SOURCE, nop)
-        sources:SetScrollMode(GetScreenHeight() * 0.5)
-        do -- sources
-            local radio = sources:CreateRadio(L.ALL, function(data) return filter.source == nil end,
-                                              function(data, menuInputData, menu) filter.source = nil end)
-            radio:SetResponse(MenuResponseRefresh)
-        end
-        sources:QueueDivider()
-
-        local spells = element:CreateButton(L.SPELL, nop)
-        spells:SetScrollMode(GetScreenHeight() * 0.5)
-        do -- spells
-            local radio = spells:CreateRadio(L.ALL, function(data) return filter.spell == nil end,
-                                             function(data, menuInputData, menu) filter.spell = nil end)
-            radio:SetResponse(MenuResponseRefresh)
-        end
-        spells:QueueDivider()
-
-        local targets = element:CreateButton(L.TARGET, nop)
-        targets:SetScrollMode(GetScreenHeight() * 0.5)
-        do -- targets
-            local radio = targets:CreateRadio(L.ALL, function(data) return filter.target == nil end,
-                                              function(data, menuInputData, menu) filter.target = nil end)
-            radio:SetResponse(MenuResponseRefresh)
-        end
-        targets:QueueDivider()
-
-        if interrupt then
-            do -- sources
-                ---@type string[]
-                local sourceKeys = {}
-                for key, sourceData in next, interrupt.sources, nil do sourceKeys[#sourceKeys + 1] = key end
-                SortUnitNames(sourceKeys)
-
-                ---@param data string
-                ---@return boolean
-                local function isSelected(data) return filter.source == data end
-                ---@param data string|number
-                ---@param menuInputData MenuInputData
-                ---@param menu MenuProxy
-                local function select(data, menuInputData, menu) filter.source = data end
-
-                for i = 1, #sourceKeys, 1 do
-                    local key = sourceKeys[i]
-                    local sourceData = interrupt.sources[key]
-
-                    local class = GetPlayerClass(key) or sourceData.class
-                    local radio = sources:CreateRadio(GetClassColor(class):WrapTextInColorCode(GetClassTextureAndName(
-                                                                                                   class,
-                                                                                                   GetPlayerName(key))),
-                                                      isSelected, select, key)
-                    radio:SetOnEnter(onUnitEnter)
-                    radio:SetOnLeave(onUnitOrSpellLeave)
-                    radio:SetResponse(MenuResponseRefresh)
-                end
-            end
-            do -- spells
-                ---@type string[]|number[]
-                local spellKeys = {}
-                for key, spellData in next, interrupt.spells, nil do spellKeys[#spellKeys + 1] = key end
-                SortSpellNames(spellKeys)
-
-                ---@param data string|number
-                ---@return boolean
-                local function isSelected(data) return filter.spell == data end
-                ---@param data string|number
-                ---@param menuInputData MenuInputData
-                ---@param menu MenuProxy
-                local function select(data, menuInputData, menu) filter.spell = data end
-
-                for i = 1, #spellKeys, 1 do
-                    local key = spellKeys[i]
-                    local spellData = interrupt.spells[key]
-
-                    if spellData then
-                        local icon, iconCoords = GetSpellIcon(key)
-                        local radio = spells:CreateRadio(GetDamageClassColor(spellData.school):WrapTextInColorCode(
-                                                             AppendTextToTexture(GetSpellName(key), icon, iconCoords)),
-                                                         isSelected, select, key)
-                        radio:SetOnEnter(onSpellEnter)
-                        radio:SetOnLeave(onUnitOrSpellLeave)
-                        radio:SetResponse(MenuResponseRefresh)
-                    end
-                end
-            end
-            do -- targets
-                ---@type string[]
-                local targetKeys = {}
-                for key, sourceData in next, interrupt.targets, nil do targetKeys[#targetKeys + 1] = key end
-                SortUnitNames(targetKeys)
-
-                ---@param data string
-                ---@return boolean
-                local function isSelected(data) return filter.target == data end
-                ---@param data string
-                ---@param menuInputData MenuInputData
-                ---@param menu MenuProxy
-                local function select(data, menuInputData, menu) filter.target = data end
-
-                for i = 1, #targetKeys, 1 do
-                    local key = targetKeys[i]
-                    local targetData = interrupt.targets[key]
-
-                    local class = GetPlayerClass(key) or targetData.class
-                    local radio = targets:CreateRadio(GetClassColor(class):WrapTextInColorCode(GetClassTextureAndName(
-                                                                                                   class,
-                                                                                                   GetPlayerName(key))),
-                                                      isSelected, select, key)
-                    radio:SetOnEnter(onUnitEnter)
-                    radio:SetOnLeave(onUnitOrSpellLeave)
-                    radio:SetResponse(MenuResponseRefresh)
-                end
-            end
-        end
-
-        element:CreateDivider()
-
-        element:CreateCheckbox(L.PETS, function(data) return filter.pets == true end,
-                               function(data, menuInputData, menu) filter.pets = not filter.pets end)
-        element:CreateCheckbox(L.GROUP, function(data) return filter.group == true end,
-                               function(data, menuInputData, menu) filter.group = not filter.group end)
     end
 
     ---@param filter InterruptModeFilter

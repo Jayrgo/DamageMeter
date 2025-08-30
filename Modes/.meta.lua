@@ -3,3 +3,16 @@
 ---@class UnitTable
 ---@field name string
 ---@field class? ClassFile
+--
+---@class FilterValue
+---@field Value any
+---@field Title? string
+--
+---@class FilterDefinition
+---@field Type "select"|"toggle"
+---@field Name string
+---@field Title? string
+---@field Default? any
+---@field Values? FilterValue[]
+--
+---@alias FilterDescription FilterDefinition[]

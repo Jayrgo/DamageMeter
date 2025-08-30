@@ -30,8 +30,7 @@ function AddOn.RegisterMode(key, name)
     if names[key] then return end
 
     ---@class Mode
-    ---@field DefaultFilter? table
-    ---@field Menu? fun(element:ElementMenuDescriptionProxy, filter: table, segment?: Segment)
+    ---@field Filter? fun(segment?: Segment):FilterDescription
     ---@field OnClick? fun(filter: table, key: any, button: string)
     ---@field OnHyperlink? fun(filter: table, link: string, button: string)
     ---@field Tooltip? fun(filter: table, segment: Segment, key: any, tooltip:Tooltip)

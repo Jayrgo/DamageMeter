@@ -823,7 +823,6 @@ local DAMAGE_TAKEN_TITLE_MOD = AddOn.GenerateHyperlink(L.DAMAGE_TAKEN .. "*", "m
 local HIGHLIGHT_FONT_COLOR = HIGHLIGHT_FONT_COLOR
 
 local format = format
-local nop = AddOn.nop
 local max = max
 local next = next
 local tConcat = table.concat
@@ -841,15 +840,12 @@ local GetClassTextureAndName = AddOn.GetClassTextureAndName
 local GetDamageClassColor = AddOn.GetDamageClassColor
 local GetPlayerClass = AddOn.GetPlayerClass
 local GetPlayerName = AddOn.GetPlayerName
-local GetScreenHeight = GetScreenHeight
 local GetSpellIcon = AddOn.GetSpellIcon
 local GetSpellName = AddOn.GetSpellName
 local GetSpellTitleLink = AddOn.GetSpellTitleLink
 local GetUnitTitleLink = AddOn.GetUnitTitleLink
-local MenuResponseRefresh = MenuResponse.Refresh
 local SortUnitNames = AddOn.SortUnitNames
 local SortSpellNames = AddOn.SortSpellNames
-local Tooltip = AddOn.Tooltip
 
 ---@param filter DamageDoneModeFilter | DamageTakenModeFilter
 ---@param data DamageDoneData|DamageTakenData?
@@ -886,38 +882,145 @@ local function getAmount(filter, data)
     return amount > 0 and amount or 0
 end
 
----@param frame Frame
----@param elementDescription ElementMenuDescriptionProxy
-local function onUnitEnter(frame, elementDescription)
-    Tooltip:SetOwner(frame, "ANCHOR_RIGHT")
-    Tooltip:SetHyperlink("unit:" .. elementDescription:GetData())
-end
-
----@param frame Frame
----@param elementDescription ElementMenuDescriptionProxy
-local function onSpellEnter(frame, elementDescription)
-    Tooltip:SetOwner(frame, "ANCHOR_RIGHT")
-    Tooltip:SetHyperlink("spell:" .. elementDescription:GetData())
-end
-
----@param frame Frame
----@param elementDescription ElementMenuDescriptionProxy
-local function onUnitOrSpellLeave(frame, elementDescription) Tooltip:Hide() end
-
 do -- DamageDone
     local DamageDoneMode = AddOn.RegisterMode("damageDone", L.DAMAGE_DONE)
     if DamageDoneMode then
-        ---@class DamageDoneModeFilter : table
-        DamageDoneMode.DefaultFilter = {
-            show = "sources",
-            source = nil,
-            spell = nil,
-            target = nil,
-            pets = true,
-            overkill = false,
-            absorbed = true,
-            group = false,
-        }
+        ---@class DamageDoneModeFilter
+        ---@field show "sources"|"spells"|"targets"
+        ---@field source string?
+        ---@field spell SpellID?
+        ---@field target string?
+        ---@field pets boolean
+        ---@field overkill boolean
+        ---@field absorbed boolean
+        ---@field group boolean
+
+        function DamageDoneMode.Filter(segment)
+            return {
+                {
+                    Type = "select",
+                    Name = "show",
+                    Values = {
+                        {Value = "sources", Title = L.SOURCES},
+                        {Value = "spells", Title = L.SPELLS},
+                        {Value = "targets", Title = L.TARGETS},
+                    },
+                    Default = "sources",
+                },
+                {
+                    Type = "select",
+                    Name = "source",
+                    Title = L.SOURCE,
+                    Default = nil,
+                    Nilable = true,
+                    Values = (function()
+                        ---@type DamageDone?
+                        local damageDone = segment and segment.damageDone
+                        local values = {{Title = L.ALL, Value = nil}}
+
+                        if damageDone then
+                            ---@type string[]
+                            local sourceKeys = {}
+                            for key, sourceData in next, damageDone.sources, nil do
+                                sourceKeys[#sourceKeys + 1] = key
+                            end
+                            SortUnitNames(sourceKeys)
+
+                            for i = 1, #sourceKeys, 1 do
+                                local key = sourceKeys[i]
+                                local sourceData = damageDone.sources[key]
+
+                                local class = GetPlayerClass(key) or sourceData.class
+                                values[#values + 1] = {
+                                    Title = GetClassColor(class):WrapTextInColorCode(GetClassTextureAndName(class,
+                                                                                                            GetPlayerName(
+                                                                                                                key))),
+                                    Value = key,
+                                }
+                            end
+                        end
+
+                        return values
+                    end)(),
+                },
+                {
+                    Type = "select",
+                    Name = "spell",
+                    Title = L.SPELL,
+                    Default = nil,
+                    Nilable = true,
+                    Values = (function()
+                        ---@type DamageDone?
+                        local damageDone = segment and segment.damageDone
+                        local values = {{Title = L.ALL, Value = nil}}
+
+                        if damageDone then
+                            ---@type string[]|number[]
+                            local spellKeys = {}
+                            for key, spellData in next, damageDone.spells, nil do
+                                spellKeys[#spellKeys + 1] = key
+                            end
+                            SortSpellNames(spellKeys)
+
+                            for i = 1, #spellKeys, 1 do
+                                local key = spellKeys[i]
+                                local spellData = damageDone.spells[key]
+
+                                if spellData then
+                                    values[#values + 1] = {
+                                        Title = GetDamageClassColor(spellData.school):WrapTextInColorCode(
+                                            AppendTextToTexture(GetSpellName(key), GetSpellIcon(key))),
+                                        Value = key,
+                                    }
+                                end
+                            end
+                        end
+
+                        return values
+                    end)(),
+                },
+                {
+                    Type = "select",
+                    Name = "target",
+                    Title = L.TARGET,
+                    Default = nil,
+                    Nilable = true,
+                    Values = (function()
+                        ---@type DamageDone?
+                        local damageDone = segment and segment.damageDone
+                        local values = {{Title = L.ALL, Value = nil}}
+
+                        if damageDone then
+                            ---@type string[]
+                            local targetKeys = {}
+                            for key, targetData in next, damageDone.targets, nil do
+                                targetKeys[#targetKeys + 1] = key
+                            end
+                            SortUnitNames(targetKeys)
+
+                            for i = 1, #targetKeys, 1 do
+                                local key = targetKeys[i]
+                                local targetData = damageDone.targets[key]
+
+                                local class = GetPlayerClass(key) or targetData.class
+                                values[#values + 1] = {
+                                    Title = GetClassColor(class):WrapTextInColorCode(GetClassTextureAndName(class,
+                                                                                                            GetPlayerName(
+                                                                                                                key))),
+                                    Value = key,
+                                }
+                            end
+                        end
+
+                        return values
+                    end)(),
+                },
+                {Type = "toggle", Name = "pets", Default = true, Title = L.PETS},
+                {Type = "toggle", Name = "overkill", Default = false, Title = L.OVERKILL},
+                {Type = "toggle", Name = "absorbed", Default = true, Title = L.ABSORBED},
+                {Type = "toggle", Name = "group", Default = false, Title = L.GROUP},
+            }
+        end
 
         do -- Title
             ---@type string[]
@@ -1214,157 +1317,6 @@ do -- DamageDone
             end
 
             return maxAmount, true, true
-        end
-
-        ---@param filter DamageDoneModeFilter
-        function DamageDoneMode.Menu(element, filter, segment)
-            ---@type DamageDone?
-            local damageDone = segment and segment.damageDone
-
-            local source = element:CreateRadio(L.SOURCES, function(data) return filter.show == "sources" end,
-                                               function(data, menuInputData, menu) filter.show = "sources" end)
-            source:SetResponse(MenuResponseRefresh)
-
-            local spell = element:CreateRadio(L.SPELLS, function(data) return filter.show == "spells" end,
-                                              function(data, menuInputData, menu) filter.show = "spells" end)
-            spell:SetResponse(MenuResponseRefresh)
-
-            local target = element:CreateRadio(L.TARGETS, function(data) return filter.show == "targets" end,
-                                               function(data, menuInputData, menu) filter.show = "targets" end)
-            target:SetResponse(MenuResponseRefresh)
-
-            element:CreateDivider()
-
-            local sources = element:CreateButton(L.SOURCE, nop)
-            sources:SetScrollMode(GetScreenHeight() * 0.5)
-            do -- sources
-                local radio = sources:CreateRadio(L.ALL, function(data) return filter.source == nil end,
-                                                  function(data, menuInputData, menu) filter.source = nil end)
-                radio:SetResponse(MenuResponseRefresh)
-            end
-            sources:QueueDivider()
-
-            local spells = element:CreateButton(L.SPELL, nop)
-            spells:SetScrollMode(GetScreenHeight() * 0.5)
-            do -- spells
-                local radio = spells:CreateRadio(L.ALL, function(data) return filter.spell == nil end,
-                                                 function(data, menuInputData, menu) filter.spell = nil end)
-                radio:SetResponse(MenuResponseRefresh)
-            end
-            spells:QueueDivider()
-
-            local targets = element:CreateButton(L.TARGET, nop)
-            targets:SetScrollMode(GetScreenHeight() * 0.5)
-            do -- targets
-                local radio = targets:CreateRadio(L.ALL, function(data) return filter.target == nil end,
-                                                  function(data, menuInputData, menu) filter.target = nil end)
-                radio:SetResponse(MenuResponseRefresh)
-            end
-            targets:QueueDivider()
-
-            if damageDone then
-                do -- sources
-                    ---@type string[]
-                    local sourceKeys = {}
-                    for key, sourceData in next, damageDone.sources, nil do
-                        sourceKeys[#sourceKeys + 1] = key
-                    end
-                    SortUnitNames(sourceKeys)
-
-                    ---@param data string
-                    ---@return boolean
-                    local function isSelected(data) return filter.source == data end
-                    ---@param data string|number
-                    ---@param menuInputData MenuInputData
-                    ---@param menu MenuProxy
-                    local function select(data, menuInputData, menu) filter.source = data end
-
-                    for i = 1, #sourceKeys, 1 do
-                        local key = sourceKeys[i]
-                        local sourceData = damageDone.sources[key]
-
-                        local class = GetPlayerClass(key) or sourceData.class
-                        local radio = sources:CreateRadio(GetClassColor(class):WrapTextInColorCode(
-                                                              GetClassTextureAndName(class, GetPlayerName(key))),
-                                                          isSelected, select, key)
-                        radio:SetOnEnter(onUnitEnter)
-                        radio:SetOnLeave(onUnitOrSpellLeave)
-                        radio:SetResponse(MenuResponseRefresh)
-                    end
-                end
-                do -- spells
-                    ---@type string[]|number[]
-                    local spellKeys = {}
-                    for key, spellData in next, damageDone.spells, nil do
-                        spellKeys[#spellKeys + 1] = key
-                    end
-                    SortSpellNames(spellKeys)
-
-                    ---@param data string|number
-                    ---@return boolean
-                    local function isSelected(data) return filter.spell == data end
-                    ---@param data string|number
-                    ---@param menuInputData MenuInputData
-                    ---@param menu MenuProxy
-                    local function select(data, menuInputData, menu) filter.spell = data end
-
-                    for i = 1, #spellKeys, 1 do
-                        local key = spellKeys[i]
-                        local spellData = damageDone.spells[key]
-
-                        if spellData then
-                            local icon, iconCoords = GetSpellIcon(key)
-                            local radio = spells:CreateRadio(
-                                              GetDamageClassColor(spellData.school):WrapTextInColorCode(
-                                                  AppendTextToTexture(GetSpellName(key), icon, iconCoords)), isSelected,
-                                              select, key)
-                            radio:SetOnEnter(onSpellEnter)
-                            radio:SetOnLeave(onUnitOrSpellLeave)
-                            radio:SetResponse(MenuResponseRefresh)
-                        end
-                    end
-                end
-                do -- targets
-                    ---@type string[]
-                    local targetKeys = {}
-                    for key, sourceData in next, damageDone.targets, nil do
-                        targetKeys[#targetKeys + 1] = key
-                    end
-                    SortUnitNames(targetKeys)
-
-                    ---@param data string
-                    ---@return boolean
-                    local function isSelected(data) return filter.target == data end
-                    ---@param data string
-                    ---@param menuInputData MenuInputData
-                    ---@param menu MenuProxy
-                    local function select(data, menuInputData, menu) filter.target = data end
-
-                    for i = 1, #targetKeys, 1 do
-                        local key = targetKeys[i]
-                        local targetData = damageDone.targets[key]
-
-                        local class = GetPlayerClass(key) or targetData.class
-                        local radio = targets:CreateRadio(GetClassColor(class):WrapTextInColorCode(
-                                                              GetClassTextureAndName(class, GetPlayerName(key))),
-                                                          isSelected, select, key)
-                        radio:SetOnEnter(onUnitEnter)
-                        radio:SetOnLeave(onUnitOrSpellLeave)
-                        radio:SetResponse(MenuResponseRefresh)
-                    end
-                end
-            end
-
-            element:CreateDivider()
-
-            element:CreateCheckbox(L.PETS, function(data) return filter.pets == true end,
-                                   function(data, menuInputData, menu) filter.pets = not filter.pets end)
-            element:CreateCheckbox(L.OVERKILL, function(data) return filter.overkill == true end,
-                                   function(data, menuInputData, menu) filter.overkill = not filter.overkill end)
-            element:CreateCheckbox(L.ABSORBED, function(data) return filter.absorbed == true end,
-                                   function(data, menuInputData, menu) filter.absorbed = not filter.absorbed end)
-            element:CreateCheckbox(L.GROUP, function(data) return filter.group == true end,
-                                   function(data, menuInputData, menu) filter.group = not filter.group end)
         end
 
         ---@param filter DamageDoneModeFilter
@@ -1899,16 +1851,140 @@ end
 do -- DamageTaken
     local DamageTakenMode = AddOn.RegisterMode("damageTaken", L.DAMAGE_TAKEN)
     if DamageTakenMode then
-        ---@class DamageTakenModeFilter : table
-        DamageTakenMode.DefaultFilter = {
-            show = "targets",
-            source = nil,
-            spell = nil,
-            target = nil,
-            overkill = false,
-            absorbed = false,
-            group = true,
-        }
+        ---@class DamageTakenModeFilter
+        ---@field show "targets"|"spells"|"sources"
+        ---@field target string?
+        ---@field spell SpellID?
+        ---@field source string?
+        ---@field overkill boolean
+        ---@field absorbed boolean
+        ---@field group boolean
+
+        function DamageTakenMode.Filter(segment)
+            return {
+                {
+                    Type = "select",
+                    Name = "show",
+                    Values = {
+                        {Value = "targets", Title = L.TARGETS},
+                        {Value = "spells", Title = L.SPELLS},
+                        {Value = "sources", Title = L.SOURCES},
+                    },
+                    Default = "targets",
+                },
+                {
+                    Type = "select",
+                    Name = "target",
+                    Title = L.TARGET,
+                    Default = nil,
+                    Nilable = true,
+                    Values = (function()
+                        ---@type DamageDone?
+                        local damageDone = segment and segment.damageDone
+                        local values = {{Title = L.ALL, Value = nil}}
+
+                        if damageDone then
+                            ---@type string[]
+                            local targetKeys = {}
+                            for key, targetData in next, damageDone.targets, nil do
+                                targetKeys[#targetKeys + 1] = key
+                            end
+                            SortUnitNames(targetKeys)
+
+                            for i = 1, #targetKeys, 1 do
+                                local key = targetKeys[i]
+                                local targetData = damageDone.targets[key]
+
+                                local class = GetPlayerClass(key) or targetData.class
+                                values[#values + 1] = {
+                                    Title = GetClassColor(class):WrapTextInColorCode(GetClassTextureAndName(class,
+                                                                                                            GetPlayerName(
+                                                                                                                key))),
+                                    Value = key,
+                                }
+                            end
+                        end
+
+                        return values
+                    end)(),
+                },
+                {
+                    Type = "select",
+                    Name = "spell",
+                    Title = L.SPELL,
+                    Default = nil,
+                    Nilable = true,
+                    Values = (function()
+                        ---@type DamageDone?
+                        local damageDone = segment and segment.damageDone
+                        local values = {{Title = L.ALL, Value = nil}}
+
+                        if damageDone then
+                            ---@type string[]|number[]
+                            local spellKeys = {}
+                            for key, spellData in next, damageDone.spells, nil do
+                                spellKeys[#spellKeys + 1] = key
+                            end
+                            SortSpellNames(spellKeys)
+
+                            for i = 1, #spellKeys, 1 do
+                                local key = spellKeys[i]
+                                local spellData = damageDone.spells[key]
+
+                                if spellData then
+                                    values[#values + 1] = {
+                                        Title = GetDamageClassColor(spellData.school):WrapTextInColorCode(
+                                            AppendTextToTexture(GetSpellName(key), GetSpellIcon(key))),
+                                        Value = key,
+                                    }
+                                end
+                            end
+                        end
+
+                        return values
+                    end)(),
+                },
+                {
+                    Type = "select",
+                    Name = "source",
+                    Title = L.SOURCE,
+                    Default = nil,
+                    Nilable = true,
+                    Values = (function()
+                        ---@type DamageDone?
+                        local damageDone = segment and segment.damageDone
+                        local values = {{Title = L.ALL, Value = nil}}
+
+                        if damageDone then
+                            ---@type string[]
+                            local sourceKeys = {}
+                            for key, sourceData in next, damageDone.sources, nil do
+                                sourceKeys[#sourceKeys + 1] = key
+                            end
+                            SortUnitNames(sourceKeys)
+
+                            for i = 1, #sourceKeys, 1 do
+                                local key = sourceKeys[i]
+                                local sourceData = damageDone.sources[key]
+
+                                local class = GetPlayerClass(key) or sourceData.class
+                                values[#values + 1] = {
+                                    Title = GetClassColor(class):WrapTextInColorCode(GetClassTextureAndName(class,
+                                                                                                            GetPlayerName(
+                                                                                                                key))),
+                                    Value = key,
+                                }
+                            end
+                        end
+
+                        return values
+                    end)(),
+                },
+                {Type = "toggle", Name = "overkill", Default = false, Title = L.OVERKILL},
+                {Type = "toggle", Name = "absorbed", Default = false, Title = L.ABSORBED},
+                {Type = "toggle", Name = "group", Default = true, Title = L.GROUP},
+            }
+        end
 
         do -- Title
             ---@type string[]
@@ -2205,155 +2281,6 @@ do -- DamageTaken
             end
 
             return maxAmount, true, true
-        end
-
-        ---@param filter DamageTakenModeFilter
-        function DamageTakenMode.Menu(element, filter, segment)
-            ---@type DamageTaken?
-            local damageTaken = segment and segment.damageTaken
-
-            local target = element:CreateRadio(L.TARGETS, function(data) return filter.show == "targets" end,
-                                               function(data, menuInputData, menu) filter.show = "targets" end)
-            target:SetResponse(MenuResponseRefresh)
-
-            local spell = element:CreateRadio(L.SPELLS, function(data) return filter.show == "spells" end,
-                                              function(data, menuInputData, menu) filter.show = "spells" end)
-            spell:SetResponse(MenuResponseRefresh)
-
-            local source = element:CreateRadio(L.SOURCES, function(data) return filter.show == "sources" end,
-                                               function(data, menuInputData, menu) filter.show = "sources" end)
-            source:SetResponse(MenuResponseRefresh)
-
-            element:CreateDivider()
-
-            local targets = element:CreateButton(L.TARGET, nop)
-            targets:SetScrollMode(GetScreenHeight() * 0.5)
-            do -- targets
-                local radio = targets:CreateRadio(L.ALL, function(data) return filter.target == nil end,
-                                                  function(data, menuInputData, menu) filter.target = nil end)
-                radio:SetResponse(MenuResponseRefresh)
-            end
-            targets:QueueDivider()
-
-            local spells = element:CreateButton(L.SPELL, nop)
-            spells:SetScrollMode(GetScreenHeight() * 0.5)
-            do -- spells
-                local radio = spells:CreateRadio(L.ALL, function(data) return filter.spell == nil end,
-                                                 function(data, menuInputData, menu) filter.spell = nil end)
-                radio:SetResponse(MenuResponseRefresh)
-            end
-            spells:QueueDivider()
-
-            local sources = element:CreateButton(L.SOURCE, nop)
-            sources:SetScrollMode(GetScreenHeight() * 0.5)
-            do -- sources
-                local radio = sources:CreateRadio(L.ALL, function(data) return filter.source == nil end,
-                                                  function(data, menuInputData, menu) filter.source = nil end)
-                radio:SetResponse(MenuResponseRefresh)
-            end
-            sources:QueueDivider()
-
-            if damageTaken then
-                do -- sources
-                    ---@type string[]
-                    local sourceKeys = {}
-                    for key, sourceData in next, damageTaken.sources, nil do
-                        sourceKeys[#sourceKeys + 1] = key
-                    end
-                    SortUnitNames(sourceKeys)
-
-                    ---@param data string
-                    ---@return boolean
-                    local function isSelected(data) return filter.source == data end
-                    ---@param data string|number
-                    ---@param menuInputData MenuInputData
-                    ---@param menu MenuProxy
-                    local function select(data, menuInputData, menu) filter.source = data end
-
-                    for i = 1, #sourceKeys, 1 do
-                        local key = sourceKeys[i]
-                        local sourceData = damageTaken.sources[key]
-
-                        local class = GetPlayerClass(key) or sourceData.class
-                        local radio = sources:CreateRadio(GetClassColor(class):WrapTextInColorCode(
-                                                              GetClassTextureAndName(class, GetPlayerName(key))),
-                                                          isSelected, select, key)
-                        radio:SetOnEnter(onUnitEnter)
-                        radio:SetOnLeave(onUnitOrSpellLeave)
-                        radio:SetResponse(MenuResponseRefresh)
-                    end
-                end
-                do -- spells
-                    ---@type string[]|number[]
-                    local spellKeys = {}
-                    for key, spellData in next, damageTaken.spells, nil do
-                        spellKeys[#spellKeys + 1] = key
-                    end
-                    SortSpellNames(spellKeys)
-
-                    ---@param data string|number
-                    ---@return boolean
-                    local function isSelected(data) return filter.spell == data end
-                    ---@param data string|number
-                    ---@param menuInputData MenuInputData
-                    ---@param menu MenuProxy
-                    local function select(data, menuInputData, menu) filter.spell = data end
-
-                    for i = 1, #spellKeys, 1 do
-                        local key = spellKeys[i]
-                        local spellData = damageTaken.spells[key]
-
-                        if spellData then
-                            local icon, iconCoords = GetSpellIcon(key)
-                            local radio = spells:CreateRadio(
-                                              GetDamageClassColor(spellData.school):WrapTextInColorCode(
-                                                  AppendTextToTexture(GetSpellName(key), icon, iconCoords)), isSelected,
-                                              select, key)
-                            radio:SetOnEnter(onSpellEnter)
-                            radio:SetOnLeave(onUnitOrSpellLeave)
-                            radio:SetResponse(MenuResponseRefresh)
-                        end
-                    end
-                end
-                do -- targets
-                    ---@type string[]
-                    local targetKeys = {}
-                    for key, sourceData in next, damageTaken.targets, nil do
-                        targetKeys[#targetKeys + 1] = key
-                    end
-                    SortUnitNames(targetKeys)
-
-                    ---@param data string
-                    ---@return boolean
-                    local function isSelected(data) return filter.target == data end
-                    ---@param data string
-                    ---@param menuInputData MenuInputData
-                    ---@param menu MenuProxy
-                    local function select(data, menuInputData, menu) filter.target = data end
-
-                    for i = 1, #targetKeys, 1 do
-                        local key = targetKeys[i]
-                        local targetData = damageTaken.targets[key]
-
-                        local class = GetPlayerClass(key) or targetData.class
-                        local radio = targets:CreateRadio(GetClassColor(class):WrapTextInColorCode(
-                                                              GetClassTextureAndName(class, GetPlayerName(key))),
-                                                          isSelected, select, key)
-                        radio:SetOnEnter(onUnitEnter)
-                        radio:SetOnLeave(onUnitOrSpellLeave)
-                        radio:SetResponse(MenuResponseRefresh)
-                    end
-                end
-            end
-
-            element:CreateDivider()
-
-            element:CreateCheckbox(L.OVERKILL, function(data) return filter.overkill == true end,
-                                   function(data, menuInputData, menu) filter.overkill = not filter.overkill end)
-            element:CreateCheckbox(L.ABSORBED, function(data) return filter.absorbed == true end,
-                                   function(data, menuInputData, menu) filter.absorbed = not filter.absorbed end)
-            element:CreateCheckbox(L.GROUP, function(data) return filter.group == true end,
-                                   function(data, menuInputData, menu) filter.group = not filter.group end)
         end
 
         ---@param filter DamageTakenModeFilter

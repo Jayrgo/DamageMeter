@@ -34,7 +34,7 @@ function(addOnName, containsBindings)
             window:SetMovable(windows[i].isMovable == nil and true or windows[i].isMovable)
             window:SetResizable(windows[i].isResizable == nil and true or windows[i].isResizable)
 
-            window:SetMode(type(windows[i].modeKey) == "string" and windows[i].modeKey or "damageDone")
+            window:SetMode(type(windows[i].modeKey) == "string" and windows[i].modeKey or "damageDone", true)
 
             window:Show()
         end

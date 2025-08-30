@@ -90,7 +90,6 @@ local max = max
 local next = next
 
 local FillUnitTables = AddOn.FillUnitTables
-local FormatNumber = AddOn.FormatNumber
 
 local DeathMode = AddOn.RegisterMode("death", L.DEATH)
 if DeathMode then
@@ -100,7 +99,6 @@ if DeathMode then
     local function getAmount(filter, data) return data and data.amount or 0 end
 
     ---@class DeathModeFilter
-    DeathMode.DefaultFilter = {}
 
     ---@param filter DeathModeFilter
     function DeathMode.Title(filter, segment) return DEATH_TITLE end
