@@ -919,15 +919,6 @@ do -- DamageDone
             group = false,
         }
 
-        ---@param filter DamageDoneModeFilter
-        function DamageDoneMode.SubTitle(filter, segment, values, totalValue, maxValue)
-            if not segment then return end
-
-            if totalValue > 0 then
-                return format("%s (%s)", FormatNumber(totalValue), FormatNumber(totalValue / segment:GetDuration()))
-            end
-        end
-
         do -- Title
             ---@type string[]
             local title = {}
@@ -1918,15 +1909,6 @@ do -- DamageTaken
             absorbed = false,
             group = true,
         }
-
-        ---@param filter DamageTakenModeFilter
-        function DamageTakenMode.SubTitle(filter, segment, values, totalValue, maxValue)
-            if not segment then return end
-
-            if totalValue > 0 then
-                return format("%s (%s)", FormatNumber(totalValue), FormatNumber(totalValue / segment:GetDuration()))
-            end
-        end
 
         do -- Title
             ---@type string[]

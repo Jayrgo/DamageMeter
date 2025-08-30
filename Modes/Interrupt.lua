@@ -268,15 +268,6 @@ if InterruptMode then
         group = false,
     }
 
-    ---@param filter InterruptModeFilter
-    function InterruptMode.SubTitle(filter, segment, values, totalValue, maxValue)
-        if not segment then return end
-
-        if totalValue > 0 then
-            return format("%s (%s)", FormatNumber(totalValue), FormatNumber(totalValue / segment:GetDuration()))
-        end
-    end
-
     do -- Title
         ---@type string[]
         local title = {}

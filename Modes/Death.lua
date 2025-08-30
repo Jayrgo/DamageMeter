@@ -103,15 +103,6 @@ if DeathMode then
     DeathMode.DefaultFilter = {}
 
     ---@param filter DeathModeFilter
-    function DeathMode.SubTitle(filter, segment, values, totalValue, maxValue)
-        ---@type Death?
-        local death = segment and segment.death
-        if not death then return end
-
-        return FormatNumber(death.amount)
-    end
-
-    ---@param filter DeathModeFilter
     function DeathMode.Title(filter, segment) return DEATH_TITLE end
 
     ---@param filter DeathModeFilter

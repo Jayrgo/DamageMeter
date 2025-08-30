@@ -367,15 +367,6 @@ if HealingDoneMode then
         absorbed = true,
     }
 
-    ---@param filter HealingDoneModeFilter
-    function HealingDoneMode.SubTitle(filter, segment, values, totalValue, maxValue)
-        if not segment then return end
-
-        if totalValue > 0 then
-            return format("%s (%s)", FormatNumber(totalValue), FormatNumber(totalValue / segment:GetDuration()))
-        end
-    end
-
     do -- Title
         ---@type string[]
         local title = {}
@@ -1333,15 +1324,6 @@ if HealingTakenMode then
         overhealing = false,
         absorbed = false,
     }
-
-    ---@param filter HealingTakenModeFilter
-    function HealingTakenMode.SubTitle(filter, segment, values, totalValue, maxValue)
-        if not segment then return end
-
-        if totalValue > 0 then
-            return format("%s (%s)", FormatNumber(totalValue), FormatNumber(totalValue / segment:GetDuration()))
-        end
-    end
 
     do -- Title
         ---@type string[]

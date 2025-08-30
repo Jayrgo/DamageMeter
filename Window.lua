@@ -688,7 +688,12 @@ function(frame)
             if not mode then return end
 
             textLeft:SetText(mode.Title(filter, segment))
-            textRight:SetText(mode.SubTitle and mode.SubTitle(filter, segment, values, totalValue, maxValue))
+            if totalValue > 0 then
+                local duration = perSecond and segment and segment:GetDuration() or nil
+                textRight:SetText(getValueText(totalValue, nil, duration))
+            else
+                textRight:SetText(nil)
+            end
         end,
         function()
             local widthRight = textRight:GetUnboundedStringWidth()

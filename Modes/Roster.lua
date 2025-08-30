@@ -51,21 +51,6 @@ if RosterMode then
     ---@class RosterModeFilter
     RosterMode.DefaultFilter = {source = nil}
 
-    ---@param filter RosterModeFilter
-    function RosterMode.SubTitle(filter, segment, values, totalValue, maxValue)
-        local roster = segment and segment.roster
-        if not roster then return end
-
-        local source = filter.source
-        if source then
-            return FormatNumber(roster[source] and roster[source].avgItemLevel)
-        else
-            local count = 0
-            for key, value in next, values, nil do count = count + 1 end
-            if count > 0 then return FormatNumber(totalValue / count) end
-        end
-    end
-
     do -- Title
         ---@type string[]
         local title = {}

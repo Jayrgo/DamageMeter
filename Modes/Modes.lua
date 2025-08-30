@@ -31,7 +31,6 @@ function AddOn.RegisterMode(key, name)
 
     ---@class Mode
     ---@field DefaultFilter? table
-    ---@field SubTitle? fun(filter: table, segment?: Segment, values: table<any, number>, totalValue: number, maxValue: number):string?
     ---@field Menu? fun(element:ElementMenuDescriptionProxy, filter: table, segment?: Segment)
     ---@field OnClick? fun(filter: table, key: any, button: string)
     ---@field OnHyperlink? fun(filter: table, link: string, button: string)

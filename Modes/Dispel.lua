@@ -311,15 +311,6 @@ if DispelMode then
     ---@class DispelModeFilter
     DispelMode.DefaultFilter = {show = "sources", source = nil, spell = nil, target = nil, pets = true, group = false}
 
-    ---@param filter DispelModeFilter
-    function DispelMode.SubTitle(filter, segment, values, totalValue, maxValue)
-        if not segment then return end
-
-        if totalValue > 0 then
-            return format("%s (%s)", FormatNumber(totalValue), FormatNumber(totalValue / segment:GetDuration()))
-        end
-    end
-
     do -- Title
         ---@type string[]
         local title = {}
