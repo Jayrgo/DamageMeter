@@ -936,6 +936,7 @@ do -- DamageDone
                                                                                                             GetPlayerName(
                                                                                                                 key))),
                                     Value = key,
+                                    Tooltip = DamageDoneMode.onUnitEnter,
                                 }
                             end
                         end
@@ -971,6 +972,7 @@ do -- DamageDone
                                         Title = GetDamageClassColor(spellData.school):WrapTextInColorCode(
                                             AppendTextToTexture(GetSpellName(key), GetSpellIcon(key))),
                                         Value = key,
+                                        Tooltip = DamageDoneMode.onSpellEnter,
                                     }
                                 end
                             end
@@ -1008,6 +1010,7 @@ do -- DamageDone
                                                                                                             GetPlayerName(
                                                                                                                 key))),
                                     Value = key,
+                                    Tooltip = DamageDoneMode.onUnitEnter,
                                 }
                             end
                         end
@@ -1901,6 +1904,7 @@ do -- DamageTaken
                                                                                                             GetPlayerName(
                                                                                                                 key))),
                                     Value = key,
+                                    Tooltip = DamageTakenMode.onUnitEnter,
                                 }
                             end
                         end
@@ -1936,6 +1940,7 @@ do -- DamageTaken
                                         Title = GetDamageClassColor(spellData.school):WrapTextInColorCode(
                                             AppendTextToTexture(GetSpellName(key), GetSpellIcon(key))),
                                         Value = key,
+                                        Tooltip = DamageTakenMode.onSpellEnter,
                                     }
                                 end
                             end
@@ -1973,6 +1978,7 @@ do -- DamageTaken
                                                                                                             GetPlayerName(
                                                                                                                 key))),
                                     Value = key,
+                                    Tooltip = DamageTakenMode.onUnitEnter,
                                 }
                             end
                         end

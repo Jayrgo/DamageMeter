@@ -23,6 +23,14 @@ function AddOn.ModeName(key) return key and names[key] or L.UNKNOWN end
 ---@return string[]
 function AddOn.ModeKeys() return Copy(keys) end
 
+---@param tooltip Tooltip
+---@param data string
+local function onUnitEnter(tooltip, data) tooltip:SetHyperlink("unit:" .. data) end
+
+---@param tooltip Tooltip
+---@param data SpellID
+local function onSpellEnter(tooltip, data) tooltip:SetHyperlink("spell:" .. data) end
+
 ---@param key string
 ---@param name string
 ---@return Mode?
@@ -35,6 +43,8 @@ function AddOn.RegisterMode(key, name)
     ---@field OnHyperlink? fun(filter: table, link: string, button: string)
     ---@field Tooltip? fun(filter: table, segment: Segment, key: any, tooltip:Tooltip)
     local mode = {
+        onUnitEnter = onUnitEnter,
+        onSpellEnter = onSpellEnter,
         ---@param filter table
         ---@param segment? Segment
         ---@return string

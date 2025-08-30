@@ -335,6 +335,7 @@ if DispelMode then
                                                                                                         GetPlayerName(
                                                                                                             key))),
                                 Value = key,
+                                Tooltip = DispelMode.onUnitEnter,
                             }
                         end
                     end
@@ -370,6 +371,7 @@ if DispelMode then
                                     Title = GetDamageClassColor(spellData.school):WrapTextInColorCode(
                                         AppendTextToTexture(GetSpellName(key), GetSpellIcon(key))),
                                     Value = key,
+                                    Tooltip = DispelMode.onSpellEnter,
                                 }
                             end
                         end
@@ -407,6 +409,7 @@ if DispelMode then
                                                                                                         GetPlayerName(
                                                                                                             key))),
                                 Value = key,
+                                Tooltip = DispelMode.onUnitEnter,
                             }
                         end
                     end

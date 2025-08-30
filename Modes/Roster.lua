@@ -71,6 +71,7 @@ if RosterMode then
                                                                                                         GetPlayerName(
                                                                                                             key))),
                                 Value = key,
+                                Tooltip = RosterMode.onUnitEnter,
                             }
                         end
                     end

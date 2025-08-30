@@ -7,6 +7,7 @@
 ---@class FilterValue
 ---@field Value any
 ---@field Title? string
+---@field Tooltip? fun(tooltip: Tooltip, data: any)
 --
 ---@class FilterDefinition
 ---@field Type "select"|"toggle"
@@ -14,5 +15,6 @@
 ---@field Title? string
 ---@field Default? any
 ---@field Values? FilterValue[]
+---@field Tooltip? fun(tooltip: Tooltip, data: any)
 --
 ---@alias FilterDescription FilterDefinition[]

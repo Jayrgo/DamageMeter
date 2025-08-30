@@ -284,6 +284,7 @@ if InterruptMode then
                                                                                                         GetPlayerName(
                                                                                                             key))),
                                 Value = key,
+                                Tooltip = InterruptMode.onUnitEnter,
                             }
                         end
                     end
@@ -319,6 +320,7 @@ if InterruptMode then
                                     Title = GetDamageClassColor(spellData.school):WrapTextInColorCode(
                                         AppendTextToTexture(GetSpellName(key), GetSpellIcon(key))),
                                     Value = key,
+                                    Tooltip = InterruptMode.onSpellEnter,
                                 }
                             end
                         end
@@ -356,6 +358,7 @@ if InterruptMode then
                                                                                                         GetPlayerName(
                                                                                                             key))),
                                 Value = key,
+                                Tooltip = InterruptMode.onUnitEnter,
                             }
                         end
                     end

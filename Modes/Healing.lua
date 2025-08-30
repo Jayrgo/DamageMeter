@@ -383,6 +383,7 @@ if HealingDoneMode then
                                                                                                         GetPlayerName(
                                                                                                             key))),
                                 Value = key,
+                                Tooltip = HealingDoneMode.onUnitEnter,
                             }
                         end
                     end
@@ -418,6 +419,7 @@ if HealingDoneMode then
                                     Title = GetDamageClassColor(spellData.school):WrapTextInColorCode(
                                         AppendTextToTexture(GetSpellName(key), GetSpellIcon(key))),
                                     Value = key,
+                                    Tooltip = HealingDoneMode.onSpellEnter,
                                 }
                             end
                         end
@@ -455,6 +457,7 @@ if HealingDoneMode then
                                                                                                         GetPlayerName(
                                                                                                             key))),
                                 Value = key,
+                                Tooltip = HealingDoneMode.onUnitEnter,
                             }
                         end
                     end
@@ -1317,6 +1320,7 @@ if HealingTakenMode then
                                                                                                         GetPlayerName(
                                                                                                             key))),
                                 Value = key,
+                                Tooltip = HealingTakenMode.onUnitEnter,
                             }
                         end
                     end
@@ -1352,6 +1356,7 @@ if HealingTakenMode then
                                     Title = GetDamageClassColor(spellData.school):WrapTextInColorCode(
                                         AppendTextToTexture(GetSpellName(key), GetSpellIcon(key))),
                                     Value = key,
+                                    Tooltip = HealingTakenMode.onSpellEnter,
                                 }
                             end
                         end
@@ -1389,6 +1394,7 @@ if HealingTakenMode then
                                                                                                         GetPlayerName(
                                                                                                             key))),
                                 Value = key,
+                                Tooltip = HealingTakenMode.onUnitEnter,
                             }
                         end
                     end

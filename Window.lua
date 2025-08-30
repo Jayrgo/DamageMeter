@@ -177,6 +177,19 @@ local function getDefaultFilter(filterDescription, filter)
     return filter
 end
 
+---@param frame Frame
+---@param elementDescription ElementMenuDescriptionProxy
+local function modeFilterOnEnter(frame, elementDescription)
+    Tooltip:SetOwner(frame, "ANCHOR_RIGHT")
+    local data = elementDescription:GetData()
+    data.Tooltip(Tooltip, data.Value)
+    Tooltip:Show()
+end
+
+---@param frame Frame
+---@param elementDescription ElementMenuDescriptionProxy
+local function modeFilterOnLeave(frame, elementDescription) Tooltip:Hide() end
+
 ---@param data any
 ---@param menuInputData MenuInputData
 ---@param menu MenuProxy
@@ -441,6 +454,10 @@ function(frame)
                                 select = radio:CreateButton(description.Title, nop)
                                 select:SetScrollMode(GetScreenHeight() * 0.5)
                             end
+                            if description.Tooltip then
+                                    select:SetOnEnter(modeFilterOnEnter)
+                                    select:SetOnLeave(modeFilterOnLeave)
+                                end
                             for k = 1, description.Values and #description.Values or 0, 1 do
                                 local definition = description.Values[k]
                                 local value = select:CreateRadio(definition.Title or tostring(definition.Value),
@@ -453,6 +470,10 @@ function(frame)
                                         filter = filter2
                                     end
                                 end, definition)
+                                if definition.Tooltip then
+                                    value:SetOnEnter(modeFilterOnEnter)
+                                    value:SetOnLeave(modeFilterOnLeave)
+                                end
                             end
                             if select == radio then radio:QueueDivider() end
                         elseif descriptionType == "toggle" then
@@ -466,6 +487,10 @@ function(frame)
                                     filter = filter2
                                 end
                             end)
+                            if description.Tooltip then
+                                toggle:SetOnEnter(modeFilterOnEnter)
+                                toggle:SetOnLeave(modeFilterOnLeave)
+                            end
                         end
                     end
 
