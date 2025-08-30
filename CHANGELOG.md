@@ -1,3 +1,17 @@
+## [0.2.0](https://github.com/Jayrgo/DamageMeter/compare/v0.1.2...v0.2.0) (2025-08-30)
+
+
+### Features
+
+* **damageDoneMode:** add spell details (hits, crits, min, max) to tooltip ([612d1cb](https://github.com/Jayrgo/DamageMeter/commit/612d1cb1b91691f791586abcf9a2b6e45365d814))
+* save filter ([db334c2](https://github.com/Jayrgo/DamageMeter/commit/db334c2aaad066484c36d1c92c7e1f23185aa7c2))
+* show filter on all modes ([3852db8](https://github.com/Jayrgo/DamageMeter/commit/3852db8f9f9c5b3c273e620f7bf0e3f07a6d4d91))
+
+
+### Bug Fixes
+
+* show tooltip on filters ([6e4fe8f](https://github.com/Jayrgo/DamageMeter/commit/6e4fe8f6a5613ad13f7ac4c77fd348111c419c8e))
+
 ## [0.1.2](https://github.com/Jayrgo/DamageMeter/compare/v0.1.1...v0.1.2) (2025-08-16)
 
 
