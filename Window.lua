@@ -15,6 +15,8 @@ local tostring = tostring
 local wipe = wipe
 
 local ActiveSegments = AddOn.ActiveSegments
+local Copy = AddOn.Copy
+local CopyTo = AddOn.CopyTo
 local CreateBarPool = AddOn.CreateBarPool
 local CreateColor = CreateColor
 local CreateFrame = CreateFrame
