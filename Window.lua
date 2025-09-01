@@ -226,13 +226,13 @@ local function deleteSegment(data, menuInputData, menu)
     ---@type Segment?
     local segment = data:GetSegment()
 
-    if segment then DeleteSegment(segment) end
+    if segment then StaticPopup_Show(AddOn.NAME .. "_DELETE_SEGMENT", segment:GetName(), nil, segment) end
 end
 
 ---@param data Window
 ---@param menuInputData MenuInputData
 ---@param menu MenuProxy
-local function deleteAllSegments(data, menuInputData, menu) DeleteAllSegments() end
+local function deleteAllSegments(data, menuInputData, menu) StaticPopup_Show(AddOn.NAME .. "_DELETE_ALL_SEGMENT") end
 
 ---@param data any
 ---@return boolean
