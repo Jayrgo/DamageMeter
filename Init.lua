@@ -1,10 +1,6 @@
 ---@class AddOn
 local AddOn = select(2, ...)
 
----@diagnostic disable:undefined-field
-if _G.Jayrgo_DebugTools_AddTable then _G.Jayrgo_DebugTools_AddTable(AddOn, ...) end
----@diagnostic enable:undefined-field
-
 ---@type string
 AddOn.NAME = ...
 AddOn.TITLE = C_AddOns.GetAddOnMetadata(AddOn.NAME, "Title")
