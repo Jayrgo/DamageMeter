@@ -74,7 +74,7 @@ local function shallowcopy(src, dst)
         for key, value in next, src, nil do copy[key] = value end
         return setmetatable(copy, getmetatable(src))
     else
-        return orig
+        return src
     end
 end
 
@@ -88,7 +88,7 @@ local function deepcopy(src, dst)
         for key, value in next, src, nil do copy[deepcopy(key)] = deepcopy(value) end
         return setmetatable(copy, deepcopy(getmetatable(src)))
     else
-        return orig
+        return src
     end
 end
 
