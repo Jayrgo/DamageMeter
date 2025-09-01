@@ -1,3 +1,10 @@
+## [0.2.1](https://github.com/Jayrgo/DamageMeter/compare/v0.2.0...v0.2.1) (2025-09-01)
+
+
+### Bug Fixes
+
+* **util:** shallowcopy and deepcopy return typo ([18e2157](https://github.com/Jayrgo/DamageMeter/commit/18e215714795e43aacd8b7d882f852c21ccd38ec))
+
 ## [0.2.0](https://github.com/Jayrgo/DamageMeter/compare/v0.1.2...v0.2.0) (2025-08-30)
 
 
