@@ -1,3 +1,10 @@
+## [0.2.3](https://github.com/Jayrgo/DamageMeter/compare/v0.2.2...v0.2.3) (2025-09-02)
+
+
+### Bug Fixes
+
+* show tooltip on filter ([35a00a7](https://github.com/Jayrgo/DamageMeter/commit/35a00a795498505c7c8d97652bc53836699c600d))
+
 ## [0.2.2](https://github.com/Jayrgo/DamageMeter/compare/v0.2.1...v0.2.2) (2025-09-02)
 
 
