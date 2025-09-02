@@ -84,12 +84,12 @@ local function scrollFrame_OnUpdate(self, elapsed)
 end
 
 ---@param owner Button
----@param rootDescription RootMenuDescriptionProxy
+---@param root RootMenuDescriptionProxy
 ---@param window Window
-local function openSegmentsMenu(owner, rootDescription, window)
-    rootDescription:SetScrollMode(GetScreenHeight() * 0.5)
+local function openSegmentsMenu(owner, root, window)
+    root:SetScrollMode(GetScreenHeight() * 0.5)
 
-    rootDescription:CreateTitle(format(L.SEGMENTS_DROPDOWN_TITLE, #AddOn.Segments))
+    root:CreateTitle(format(L.SEGMENTS_DROPDOWN_TITLE, #AddOn.Segments))
 
     ---@param data Segment
     ---@return boolean
@@ -127,7 +127,7 @@ local function openSegmentsMenu(owner, rootDescription, window)
 
     local current = AddOn.GetCombatSegment()
 
-    local radio = rootDescription:CreateRadio(L.CURRENT, isSelected, setSelected, current)
+    local radio = root:CreateRadio(L.CURRENT, isSelected, setSelected, current)
     radio:SetOnEnter(function(frame, elementDescription)
         ---@type Segment?
         local segment = elementDescription:GetData()
@@ -152,18 +152,18 @@ local function openSegmentsMenu(owner, rootDescription, window)
 
     for key, activeSegment in next, ActiveSegments, nil do
         if activeSegment ~= current then
-            radio = rootDescription:CreateRadio(activeSegment:GetName(), isSelected, setSelected, activeSegment)
+            radio = root:CreateRadio(activeSegment:GetName(), isSelected, setSelected, activeSegment)
             radio:SetOnEnter(onEnter)
             radio:SetOnLeave(onLeave)
         end
     end
 
-    rootDescription:QueueDivider()
+    root:QueueDivider()
 
     for i = #Segments, 1, -1 do
         local savedSegment = Segments[i]
 
-        radio = rootDescription:CreateRadio(savedSegment:GetName(), isSelected, setSelected, savedSegment)
+        radio = root:CreateRadio(savedSegment:GetName(), isSelected, setSelected, savedSegment)
         radio:SetOnEnter(onEnter)
         radio:SetOnLeave(onLeave)
     end
@@ -268,22 +268,26 @@ local function isCacheEnabled(data) return AddOn.IsCacheEnabled() end
 local function toggleEventCache(data, menuInputData, menu) AddOn.SetCacheEnabled(not AddOn.IsCacheEnabled()) end
 
 ---@param owner Button
----@param rootDescription RootMenuDescriptionProxy
+---@param root RootMenuDescriptionProxy
 ---@param window Window
-local function openSettingsMenu(owner, rootDescription, window)
-    rootDescription:SetScrollMode(GetScreenHeight() * 0.5)
+local function openSettingsMenu(owner, root, window)
+    root:SetScrollMode(GetScreenHeight() * 0.5)
 
-    rootDescription:CreateTitle(L.SETTINGS_DROPDOWN_TITLE)
+    root:CreateTitle(L.SETTINGS_DROPDOWN_TITLE)
 
-    rootDescription:CreateButton(L.CREATE_NEW_WINDOW, createWindow)
-    rootDescription:CreateCheckbox(L.UNLOCK_WINDOW, isWindowUnlocked, toggleUnlockWindow, window)
-    local button = rootDescription:CreateButton(L.CLOSE_WINDOW, closeWindow, window)
+    root:CreateButton(L.CREATE_NEW_WINDOW, createWindow)
+    root:CreateCheckbox(L.UNLOCK_WINDOW, isWindowUnlocked, toggleUnlockWindow, window)
+    local button = root:CreateButton(L.CLOSE_WINDOW, closeWindow, window)
     button:SetEnabled(windowPool:GetNumActive() > 1)
 
-    rootDescription:CreateDivider()
+    root:CreateDivider()
 
-    rootDescription:CreateButton(L.DELETE_SEGMENT, deleteSegment, window)
-    rootDescription:CreateButton(L.DELETE_ALL_SEGMENTS, deleteAllSegments)
+    root:CreateButton(L.DELETE_SEGMENT, deleteSegment, window)
+    root:CreateButton(L.DELETE_ALL_SEGMENTS, deleteAllSegments)
+
+    root:CreateDivider()
+
+    root:CreateCheckbox(L.CACHING_EVENTS, isCacheEnabled, toggleEventCache)
 
     rootDescription:CreateDivider()
 
