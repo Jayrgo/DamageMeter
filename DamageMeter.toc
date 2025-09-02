@@ -3,6 +3,7 @@
 ## Author: Jayrgo
 ## Version: v0.2.3
 ## SavedVariables: DamageMeter_SavedVars
+## SavedVariablesPerCharacter: DamageMeter_SavedVarsPerChar
 
 Init.lua
 
@@ -30,4 +31,4 @@ Modes/Roster.lua
 Bar.lua
 Window.lua
 
-Startup.lua
+Profiles.lua

@@ -3,6 +3,8 @@ local AddOn = (select(2, ...))
 
 local L = AddOn.L
 
+local CREATE_PROFILE_DIALOG = AddOn.NAME .. "_CREATE_PROFILE"
+local DELETE_PROFILE_DIALOG = AddOn.NAME .. "_DELETE_PROFILE"
 local DELETE_SEGMENT_DIALOG = AddOn.NAME .. "_DELETE_SEGMENT"
 local DELETE_ALL_SEGMENTS_DIALOG = AddOn.NAME .. "_DELETE_ALL_SEGMENTS"
 
@@ -31,11 +33,49 @@ local GetScreenHeight = GetScreenHeight
 local GetScreenWidth = GetScreenWidth
 local IsModifierKeyDown = IsModifierKeyDown
 local MenuResponseClose = MenuResponse.Close
+local MenuResponseCloseAll = MenuResponse.CloseAll
 local Mode = AddOn.Mode
 local ModeKeys = AddOn.ModeKeys
 local ModeName = AddOn.ModeName
 local Segments = AddOn.Segments
 local Tooltip = AddOn.Tooltip
+
+StaticPopupDialogs[CREATE_PROFILE_DIALOG] = {
+    text = L.CREATE_PROFILE,
+    button1 = L.CREATE,
+    button2 = L.CANCEL,
+    hasEditBox = 1,
+    ---@param data fun(name: string)
+    OnAccept = function(dialog, data)
+        local text = dialog:GetEditBox():GetText()
+        data(text)
+    end,
+    ---@param data fun(name: string)
+    EditBoxOnEnterPressed = function(editBox, data)
+        local dialog = editBox:GetParent()
+        if dialog:GetButton1():IsEnabled() then
+            local text = dialog:GetEditBox():GetText()
+            data(text)
+            dialog:Hide()
+        end
+    end,
+    EditBoxOnTextChanged = StaticPopup_StandardNonEmptyTextHandler,
+    EditBoxOnEscapePressed = StaticPopup_StandardEditBoxOnEscapePressed,
+    hideOnEscape = true,
+    timeout = 0,
+    whileDead = true,
+}
+
+StaticPopupDialogs[DELETE_PROFILE_DIALOG] = {
+    text = L.ARE_YOU_SURE_TO_DELETE_THE_PROFILE,
+    button1 = L.YES,
+    button2 = L.NO,
+    ---@param data string
+    OnAccept = function(dialog, data) AddOn.DeleteProfile(data) end,
+    hideOnEscape = true,
+    timeout = 0,
+    whileDead = true,
+}
 
 StaticPopupDialogs[DELETE_SEGMENT_DIALOG] = {
     text = L.ARE_YOU_SURE_TO_DELETE_THE_SEGMENT,
@@ -267,6 +307,27 @@ local function isCacheEnabled(data) return AddOn.IsCacheEnabled() end
 ---@param menu MenuProxy
 local function toggleEventCache(data, menuInputData, menu) AddOn.SetCacheEnabled(not AddOn.IsCacheEnabled()) end
 
+---@param data any
+---@param menuInputData MenuInputData
+---@param menu MenuProxy
+local function createProfile(data, menuInputData, menu)
+    StaticPopup_Show(CREATE_PROFILE_DIALOG, nil, nil, AddOn.CreateProfile)
+end
+
+---@param data string
+---@param menuInputData MenuInputData
+---@param menu MenuProxy
+local function deleteProfile(data, menuInputData, menu) StaticPopup_Show(DELETE_PROFILE_DIALOG, data, nil, data) end
+
+---@param data string
+---@return boolean
+local function isProfileSelected(data) return AddOn.GetProfile() == data end
+
+---@param data string
+---@param menuInputData MenuInputData
+---@param menu MenuProxy
+local function selectProfile(data, menuInputData, menu) AddOn.SetProfile(data) end
+
 ---@param owner Button
 ---@param root RootMenuDescriptionProxy
 ---@param window Window
@@ -275,10 +336,12 @@ local function openSettingsMenu(owner, root, window)
 
     root:CreateTitle(L.SETTINGS_DROPDOWN_TITLE)
 
-    root:CreateButton(L.CREATE_NEW_WINDOW, createWindow)
-    root:CreateCheckbox(L.UNLOCK_WINDOW, isWindowUnlocked, toggleUnlockWindow, window)
-    local button = root:CreateButton(L.CLOSE_WINDOW, closeWindow, window)
-    button:SetEnabled(windowPool:GetNumActive() > 1)
+    do -- windows
+        root:CreateButton(L.CREATE_NEW_WINDOW, createWindow)
+        root:CreateCheckbox(L.UNLOCK_WINDOW, isWindowUnlocked, toggleUnlockWindow, window)
+        local button = root:CreateButton(L.CLOSE_WINDOW, closeWindow, window)
+        button:SetEnabled(windowPool:GetNumActive() > 1)
+    end
 
     root:CreateDivider()
 
@@ -289,9 +352,22 @@ local function openSettingsMenu(owner, root, window)
 
     root:CreateCheckbox(L.CACHING_EVENTS, isCacheEnabled, toggleEventCache)
 
-    rootDescription:CreateDivider()
+    root:CreateDivider()
 
-    rootDescription:CreateCheckbox(L.CACHING_EVENTS, isCacheEnabled, toggleEventCache)
+    do -- profiles
+        local button = root:CreateButton(L.PROFILE, nop)
+        button:CreateButton(L.CREATE, createProfile)
+        button:CreateButton(L.DELETE, deleteProfile, AddOn.GetProfile())
+        button:CreateDivider()
+
+        local profiles = AddOn.GetProfiles()
+        for i = 1, #profiles, 1 do
+            local profile = profiles[i]
+            local checkbox = button:CreateCheckbox(profile, isProfileSelected, selectProfile, profile)
+            checkbox:SetResponse(MenuResponseCloseAll)
+        end
+    end
+
 end
 
 ---@param value number

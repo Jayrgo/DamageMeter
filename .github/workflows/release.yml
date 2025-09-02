@@ -21,13 +21,15 @@ jobs:
       - name: Create changelog
         id: changelog
         if: ${{ steps.checkout.outcome == 'success'}}
-        uses: TriPSs/conventional-changelog-action@v5
+        uses: TriPSs/conventional-changelog-action@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           preset: conventionalcommits
           release-count: 0
           skip-version-file: true
           pre-commit: .pre-commit.js
+          pre-release: true
+          pre-release-identifier: alpha
 
       - name: Create release
         id: release

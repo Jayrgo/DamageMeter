@@ -41,6 +41,7 @@ local GetNumGroupMembers = GetNumGroupMembers
 local GetPlayerInfoByGUID = GetPlayerInfoByGUID
 local C_GetSpellName = C_Spell.GetSpellName
 local C_GetSpellTexture = C_Spell.GetSpellTexture
+local InCombatLockdown = InCombatLockdown
 local IsEventValid = C_EventUtils.IsEventValid
 local IsInGroup = IsInGroup
 local IsInRaid = IsInRaid
@@ -107,15 +108,17 @@ function AddOn.CopyTo(src, dst, deep) return deep and deepcopy(src, dst) or shal
 
 ---@param ... any
 ---@return SafeTable
-function AddOn.SafePack(...)
+local function safePack(...)
     ---@class SafeTable
     ---@field n number
     return {n = select("#", ...), ...}
 end
+AddOn.SafePack = safePack
 
 ---@param st SafeTable
 ---@return ...
-function AddOn.SafeUnpack(st) return unpack(st, 1, st.n) end
+local function safeUnpack(st) return unpack(st, 1, st.n) end
+AddOn.SafeUnpack = safeUnpack
 
 ---@param t table
 ---@param k any
@@ -712,5 +715,30 @@ do -- Events
         end
 
         if not tContains(callbacks, handler) then callbacks[#callbacks + 1] = handler end
+    end
+end
+
+do -- ProtectedCall
+    ---@type fun(...)[]
+    local funcs = {}
+    ---@type SafeTable[]
+    local args = {}
+
+    AddOn.RegisterEvent("PLAYER_REGEN_ENABLED", function()
+        for i = 1, #funcs, 1 do funcs[i](safeUnpack(args[i])) end
+
+        wipe(funcs)
+        wipe(args)
+    end)
+
+    ---@param fun fun(...)
+    ---@param ... any
+    function AddOn.ProtectedCall(fun, ...)
+        if not InCombatLockdown() then
+            fun(...)
+        else
+            funcs[#funcs + 1] = fun
+            args[#args + 1] = safePack(...)
+        end
     end
 end
