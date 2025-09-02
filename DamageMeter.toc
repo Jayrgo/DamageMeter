@@ -27,8 +27,6 @@ Modes/Dispel.lua
 Modes/Death.lua
 Modes/Roster.lua
 
-Popups.lua
-
 Bar.lua
 Window.lua
 

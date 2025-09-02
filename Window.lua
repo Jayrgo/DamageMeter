@@ -3,6 +3,9 @@ local AddOn = (select(2, ...))
 
 local L = AddOn.L
 
+local DELETE_SEGMENT_DIALOG = AddOn.NAME .. "_DELETE_SEGMENT"
+local DELETE_ALL_SEGMENTS_DIALOG = AddOn.NAME .. "_DELETE_ALL_SEGMENTS"
+
 local format = format
 local max = max
 local min = min
@@ -33,6 +36,27 @@ local ModeKeys = AddOn.ModeKeys
 local ModeName = AddOn.ModeName
 local Segments = AddOn.Segments
 local Tooltip = AddOn.Tooltip
+
+StaticPopupDialogs[DELETE_SEGMENT_DIALOG] = {
+    text = L.ARE_YOU_SURE_TO_DELETE_THE_SEGMENT,
+    button1 = L.YES,
+    button2 = L.NO,
+    ---@param data Segment
+    OnAccept = function(dialog, data) AddOn.DeleteSegment(data) end,
+    hideOnEscape = true,
+    timeout = 0,
+    whileDead = true,
+}
+
+StaticPopupDialogs[DELETE_ALL_SEGMENTS_DIALOG] = {
+    text = L.ARE_YOU_SURE_TO_DELETE_ALL_SEGMENTS,
+    button1 = L.YES,
+    button2 = L.NO,
+    OnAccept = function(dialog, data) AddOn.DeleteAllSegments() end,
+    hideOnEscape = true,
+    timeout = 0,
+    whileDead = true,
+}
 
 ---@alias WindowPoolPairs fun(table: table<Window, boolean>, index?: Window):Window, boolean
 ---@class WindowPool
@@ -226,13 +250,13 @@ local function deleteSegment(data, menuInputData, menu)
     ---@type Segment?
     local segment = data:GetSegment()
 
-    if segment then StaticPopup_Show(AddOn.NAME .. "_DELETE_SEGMENT", segment:GetName(), nil, segment) end
+    if segment then StaticPopup_Show(DELETE_SEGMENT_DIALOG, segment:GetName(), nil, segment) end
 end
 
 ---@param data Window
 ---@param menuInputData MenuInputData
 ---@param menu MenuProxy
-local function deleteAllSegments(data, menuInputData, menu) StaticPopup_Show(AddOn.NAME .. "_DELETE_ALL_SEGMENT") end
+local function deleteAllSegments(data, menuInputData, menu) StaticPopup_Show(DELETE_ALL_SEGMENTS_DIALOG) end
 
 ---@param data any
 ---@return boolean
