@@ -1,7 +1,7 @@
 ## Interface: 110200
 ## Title: DamageMeter |cffbebebeby Jayrgo|r
 ## Author: Jayrgo
-## Version: v0.2.1
+## Version: v0.2.2
 ## SavedVariables: DamageMeter_SavedVars
 
 Init.lua

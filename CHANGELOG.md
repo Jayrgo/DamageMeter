@@ -1,3 +1,10 @@
+## [0.2.2](https://github.com/Jayrgo/DamageMeter/compare/v0.2.1...v0.2.2) (2025-09-02)
+
+
+### Bug Fixes
+
+* **window:** set and get filter ([b65f1ce](https://github.com/Jayrgo/DamageMeter/commit/b65f1cee6f1b074e70a2758eb7516ee313a15118))
+
 ## [0.2.1](https://github.com/Jayrgo/DamageMeter/compare/v0.2.0...v0.2.1) (2025-09-01)
 
 
