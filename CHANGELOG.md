@@ -1,3 +1,14 @@
+## [1.0.0-alpha.0](https://github.com/Jayrgo/DamageMeter/compare/v0.2.3...v1.0.0-alpha.0) (2025-09-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* profiles
+
+### Features
+
+* profiles ([099801a](https://github.com/Jayrgo/DamageMeter/commit/099801abae8c7bddfd8d17f27190c4ce1ba5ac9f))
+
 ## [0.2.3](https://github.com/Jayrgo/DamageMeter/compare/v0.2.2...v0.2.3) (2025-09-02)
 
 
