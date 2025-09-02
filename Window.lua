@@ -483,9 +483,9 @@ function(frame)
                                 select:SetScrollMode(GetScreenHeight() * 0.5)
                             end
                             if description.Tooltip then
-                                    select:SetOnEnter(modeFilterOnEnter)
-                                    select:SetOnLeave(modeFilterOnLeave)
-                                end
+                                select:SetOnEnter(modeFilterOnEnter)
+                                select:SetOnLeave(modeFilterOnLeave)
+                            end
                             for k = 1, description.Values and #description.Values or 0, 1 do
                                 local definition = description.Values[k]
                                 local value = select:CreateRadio(definition.Title or tostring(definition.Value),
